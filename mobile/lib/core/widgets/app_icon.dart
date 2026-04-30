@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
@@ -27,7 +28,12 @@ class AppIcon extends StatelessWidget {
         height: size,
         fit: BoxFit.contain,
         color: _shouldTint(assetPath!) ? color : null,
-        errorBuilder: (c, o, s) => _fallback(),
+        errorBuilder: (BuildContext c, Object err, StackTrace? st) {
+          if (kDebugMode) {
+            debugPrint('AppIcon load failed: $assetPath — $err');
+          }
+          return _fallback();
+        },
       );
     }
     return _fallback();

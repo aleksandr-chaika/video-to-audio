@@ -55,3 +55,6 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    # Flutter НЕ включает подпапки рекурсивно — icons/ нужен явно,
+    # иначе ic_gallery / ic_files / ic_clipboard и др. не попадут в bundle.
+    - assets/images/icons/
