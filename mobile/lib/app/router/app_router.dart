@@ -61,7 +61,13 @@ GoRouter buildRouter() {
         builder: (BuildContext _, GoRouterState state) {
           final ResultPayload payload =
               ResultPayload.fromMap(state.extra! as Map<String, Object?>);
-          return ResultPage(payload: payload);
+          // ValueKey по filePath — чтобы при go('/result', extra: новый файл)
+          // Flutter создал новый ResultPage state (с new just_audio.setFilePath),
+          // а не переиспользовал старый плеер со старым треком.
+          return ResultPage(
+            key: ValueKey<String>(payload.filePath),
+            payload: payload,
+          );
         },
       ),
       GoRoute(
