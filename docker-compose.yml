@@ -42,6 +42,14 @@ services:
     command: ["arq", "app.workers.arq_settings.WorkerSettings"]
     volumes:
       - tmp_data:/tmp/mp3craft
+    # Worker не открывает HTTP, поэтому HTTP-healthcheck из Dockerfile неприменим.
+    # Проверяем что worker может достучаться до Redis (если может — значит, и job-и обработает).
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import redis; redis.from_url('redis://redis:6379/0').ping()\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       redis:
         condition: service_healthy
