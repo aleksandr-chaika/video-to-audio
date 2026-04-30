@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -199,7 +200,12 @@ class _YouTubeHeader extends StatelessWidget {
           'assets/images/youtube_logo.png',
           height: 20,
           fit: BoxFit.contain,
-          errorBuilder: (c, o, s) => const _YouTubeWordmarkFallback(),
+          errorBuilder: (BuildContext c, Object err, StackTrace? st) {
+            if (kDebugMode) {
+              debugPrint('youtube_logo.png load failed: $err');
+            }
+            return const _YouTubeWordmarkFallback();
+          },
         ),
       ],
     );
