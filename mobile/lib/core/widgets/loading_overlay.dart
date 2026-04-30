@@ -1,13 +1,11 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_dimens.dart';
 import '../../app/theme/app_text_styles.dart';
 
-/// Полноэкранный модал «Processing…» (Image #2).
-/// Затемняет underlying экран, по центру — карточка с CircularProgress + текст.
+/// Loading-модал (Image#2): чёрный overlay 50%, по центру:
+/// квадрат 140×140 radius 42 #1C1C1C, под ним "Processing..." и подпись 60% white.
 class LoadingOverlay extends StatelessWidget {
   const LoadingOverlay({
     super.key,
@@ -20,50 +18,42 @@ class LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-            child: ColoredBox(
-              color: AppColors.background.withValues(alpha: 0.55),
-            ),
-          ),
-        ),
-        Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(AppDimens.radius2xl),
-                ),
-                child: const Center(
-                  child: SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: AppColors.accentPrimary,
-                    ),
+    return ColoredBox(
+      color: Colors.black.withValues(alpha: 0.5),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: AppDimens.modalBoxSize,
+              height: AppDimens.modalBoxSize,
+              decoration: BoxDecoration(
+                color: AppColors.modalBox,
+                borderRadius: BorderRadius.circular(AppDimens.radius42),
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: AppColors.accentSolid,
                   ),
                 ),
               ),
-              const SizedBox(height: AppDimens.space2xl),
-              Text(title, style: AppTextStyles.subtitle),
-              const SizedBox(height: AppDimens.spaceSm),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodySecondary,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: AppDimens.space24),
+            Text(title,
+                style: AppTextStyles.processingTitle, textAlign: TextAlign.center),
+            const SizedBox(height: AppDimens.space8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.processingSub,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

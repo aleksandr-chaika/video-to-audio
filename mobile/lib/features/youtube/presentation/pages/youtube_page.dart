@@ -37,7 +37,7 @@ class _YoutubePageState extends State<YoutubePage> {
     return BlocListener<YoutubeBloc, YoutubeState>(
       listener: (BuildContext context, YoutubeState state) {
         switch (state) {
-          case YoutubeDone(:final filePath, :final job):
+          case YoutubeDone(:final String filePath, :final job):
             context.read<HistoryBloc>().add(
                   HistoryItemAdded(
                     HistoryItem(
@@ -59,7 +59,7 @@ class _YoutubePageState extends State<YoutubePage> {
               'sourceFormat': 'mp4',
               'title': job.title,
             });
-          case YoutubeFailure(:final message):
+          case YoutubeFailure(:final String message):
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(message),

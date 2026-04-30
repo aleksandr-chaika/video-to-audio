@@ -4,8 +4,8 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_dimens.dart';
 import '../../app/theme/app_text_styles.dart';
 
-/// Основная синяя градиент-кнопка (Save / Share / Submit).
-/// Высота фиксирована (54), ширина — растянута контейнером.
+/// Primary CTA: 343×56, radius 20, gradient #6298FF→#1B63F8 + stroke white@20%→0%.
+/// Используется для Save / Share / Convert.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     required this.label,
@@ -42,40 +42,69 @@ class PrimaryButton extends StatelessWidget {
             children: <Widget>[
               if (icon != null) ...<Widget>[
                 Icon(icon, size: 20, color: AppColors.textPrimary),
-                const SizedBox(width: AppDimens.spaceSm),
+                const SizedBox(width: AppDimens.space8),
               ],
               Text(label, style: AppTextStyles.button),
             ],
           );
 
-    final BoxDecoration deco = BoxDecoration(
-      gradient: enabled ? AppColors.accentGradient : null,
-      color: enabled ? null : AppColors.iconButtonBg,
-      borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-      boxShadow: enabled
-          ? <BoxShadow>[
-              BoxShadow(
-                color: AppColors.accentPrimary.withValues(alpha: 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: SizedBox(
+        width: expand ? double.infinity : null,
+        height: height,
+        child: Material(
+          color: Colors.transparent,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: AppColors.accentGradient,
+              borderRadius: BorderRadius.circular(AppDimens.radius20),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppDimens.radius20),
+              onTap: enabled ? onPressed : null,
+              child: Stack(
+                children: <Widget>[
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(AppDimens.radius20),
+                          border: const _GradientBorder(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(child: content),
+                ],
               ),
-            ]
-          : null,
-    );
-
-    final Widget btn = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-        child: Ink(
-          decoration: deco,
-          height: height,
-          child: Center(child: content),
+            ),
+          ),
         ),
       ),
     );
+  }
+}
 
-    return expand ? SizedBox(width: double.infinity, child: btn) : btn;
+class _GradientBorder extends Border {
+  const _GradientBorder();
+
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    TextDirection? textDirection,
+    BoxShape shape = BoxShape.rectangle,
+    BorderRadius? borderRadius,
+  }) {
+    final Paint paint = Paint()
+      ..shader = AppColors.strokeAccentGradient.createShader(rect)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    final RRect rrect = (borderRadius ??
+            BorderRadius.circular(AppDimens.radius20))
+        .toRRect(rect);
+    canvas.drawRRect(rrect, paint);
   }
 }

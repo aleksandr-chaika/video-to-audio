@@ -16,10 +16,9 @@ import '../../../history/domain/entities/history_item.dart';
 import '../../../history/presentation/bloc/history_bloc.dart';
 import '../../domain/entities/result_payload.dart';
 
-/// Image#3 — экран Result.
+/// Image#3 — Result.
 class ResultPage extends StatefulWidget {
   const ResultPage({required this.payload, super.key});
-
   final ResultPayload payload;
 
   @override
@@ -39,10 +38,10 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   Future<void> _setup() async {
-    final Duration? duration = await _player.setFilePath(widget.payload.filePath);
+    final Duration? d = await _player.setFilePath(widget.payload.filePath);
     if (!mounted) return;
     setState(() {
-      _duration = duration ??
+      _duration = d ??
           (widget.payload.durationMs > 0
               ? widget.payload.duration
               : Duration.zero);
@@ -54,8 +53,9 @@ class _ResultPageState extends State<ResultPage> {
     _player.playerStateStream.listen((PlayerState s) {
       if (!mounted) return;
       if (s.processingState == ProcessingState.completed) {
-        _player.seek(Duration.zero);
-        _player.pause();
+        _player
+          ..seek(Duration.zero)
+          ..pause();
       } else {
         setState(() {});
       }
@@ -68,12 +68,8 @@ class _ResultPageState extends State<ResultPage> {
     super.dispose();
   }
 
-  void _togglePlay() {
-    if (_player.playing) {
-      _player.pause();
-    } else {
-      _player.play();
-    }
+  void _toggle() {
+    _player.playing ? _player.pause() : _player.play();
   }
 
   Future<void> _share() async {
@@ -85,25 +81,23 @@ class _ResultPageState extends State<ResultPage> {
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('Delete?', style: AppTextStyles.subtitle),
-        content: const Text(
+        title: Text('Delete?', style: AppTextStyles.appBarTitle),
+        content: Text(
           'Запись будет удалена из истории и с устройства.',
-          style: AppTextStyles.bodySecondary,
+          style: AppTextStyles.subtitle,
         ),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // Удаляем по file_path.
-              final HistoryState state = context.read<HistoryBloc>().state;
-              if (state is HistoryLoaded) {
-                final HistoryItem? item = state.items
-                    .where((HistoryItem h) =>
-                        h.filePath == widget.payload.filePath)
+              final HistoryState st = context.read<HistoryBloc>().state;
+              if (st is HistoryLoaded) {
+                final HistoryItem? item = st.items
+                    .where(
+                        (HistoryItem h) => h.filePath == widget.payload.filePath)
                     .firstOrNull;
                 if (item?.id != null) {
                   context
@@ -113,7 +107,8 @@ class _ResultPageState extends State<ResultPage> {
               }
               context.go('/');
             },
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text('Delete',
+                style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -123,64 +118,117 @@ class _ResultPageState extends State<ResultPage> {
   @override
   Widget build(BuildContext context) {
     final ResultPayload p = widget.payload;
-    final Duration remaining = _duration - _position;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: <Widget>[
-            _AppBar(onClose: () => context.go('/'), onDelete: _delete),
-            Expanded(
-              child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppDimens.spaceLg),
-                child: Column(
-                  children: <Widget>[
-                    AudioPreviewBlock(
-                      imagePath: p.thumbnailPath,
-                      placeholderIcon: p.sourceFormat == SourceFormat.mp4
-                          ? Icons.videocam_rounded
-                          : Icons.music_note_rounded,
-                    ),
-                    const SizedBox(height: AppDimens.spaceMd),
-                    _FormatRow(
-                      sourceLabel: p.sourceFormat.label,
-                      duration: _duration,
-                    ),
-                    const SizedBox(height: AppDimens.space2xl),
-                    _CropAudioButton(onTap: () {
-                      context.push('/crop', extra: <String, Object?>{
-                        'path': p.filePath,
-                        'durationMs': _duration.inMilliseconds,
-                      });
-                    }),
-                    const SizedBox(height: AppDimens.spaceLg),
-                    _PlayerBar(
-                      playing: _player.playing,
-                      position: _position,
-                      remaining: remaining,
-                      duration: _duration,
-                      onToggle: _togglePlay,
-                      onSeek: (Duration d) => _player.seek(d),
-                    ),
+      body: Stack(
+        children: <Widget>[
+          // Ambient blue ellipse top
+          Positioned(
+            left: -232,
+            top: -617,
+            child: Container(
+              width: 839,
+              height: 839,
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  colors: <Color>[
+                    AppColors.accentGradientTop,
+                    AppColors.accentGradientBottom,
+                    Color(0x00000000),
                   ],
+                  stops: <double>[0.0, 0.6, 1.0],
                 ),
+                shape: BoxShape.circle,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimens.spaceLg,
-                AppDimens.spaceLg,
-                AppDimens.spaceLg,
-                AppDimens.space2xl,
+          ),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: <Widget>[
+                _ResultAppBar(onClose: () => context.go('/'), onDelete: _delete),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimens.space16),
+                    child: Column(
+                      children: <Widget>[
+                        const SizedBox(height: AppDimens.space14),
+                        AudioPreviewBlock(
+                          imagePath: p.thumbnailPath,
+                          placeholderIcon: p.sourceFormat == SourceFormat.mp4
+                              ? Icons.videocam_rounded
+                              : Icons.music_note_rounded,
+                          height: AppDimens.previewIconOnlyHeight,
+                          bottomOverlay: _PreviewBottomRow(
+                            sourceLabel: p.sourceFormat.label,
+                            duration: _duration,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimens.space20),
+                        _CropAudioButton(onTap: () {
+                          context.push('/crop', extra: <String, Object?>{
+                            'path': p.filePath,
+                            'durationMs': _duration.inMilliseconds,
+                          });
+                        }),
+                        const SizedBox(height: AppDimens.space14),
+                        _PlayerBar(
+                          playing: _player.playing,
+                          position: _position,
+                          duration: _duration,
+                          onToggle: _toggle,
+                          onSeek: _player.seek,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimens.space16,
+                    AppDimens.space16,
+                    AppDimens.space16,
+                    AppDimens.space24,
+                  ),
+                  child: PrimaryButton(
+                    label: 'Share',
+                    icon: Icons.ios_share_rounded,
+                    onPressed: _share,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultAppBar extends StatelessWidget {
+  const _ResultAppBar({required this.onClose, required this.onDelete});
+  final VoidCallback onClose;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: AppDimens.appBarHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppDimens.space16),
+        child: Row(
+          children: <Widget>[
+            IconButtonCircle(icon: Icons.close_rounded, onPressed: onClose),
+            Expanded(
+              child: Center(
+                child: Text('Result', style: AppTextStyles.appBarTitle),
               ),
-              child: PrimaryButton(
-                label: 'Share',
-                icon: Icons.ios_share_rounded,
-                onPressed: _share,
-              ),
+            ),
+            IconButtonCircle(
+              icon: Icons.delete_outline_rounded,
+              onPressed: onDelete,
+              danger: true,
             ),
           ],
         ),
@@ -189,45 +237,8 @@ class _ResultPageState extends State<ResultPage> {
   }
 }
 
-class _AppBar extends StatelessWidget {
-  const _AppBar({required this.onClose, required this.onDelete});
-
-  final VoidCallback onClose;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(gradient: AppColors.appBarGradient),
-      padding: const EdgeInsets.fromLTRB(
-        AppDimens.spaceLg,
-        AppDimens.spaceMd,
-        AppDimens.spaceLg,
-        AppDimens.spaceLg,
-      ),
-      child: Row(
-        children: <Widget>[
-          IconButtonCircle(icon: Icons.close_rounded, onPressed: onClose),
-          const Expanded(
-            child: Center(
-              child: Text('Result', style: AppTextStyles.subtitle),
-            ),
-          ),
-          IconButtonCircle(
-            icon: Icons.delete_outline_rounded,
-            background: AppColors.danger.withValues(alpha: 0.18),
-            iconColor: AppColors.danger,
-            onPressed: onDelete,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FormatRow extends StatelessWidget {
-  const _FormatRow({required this.sourceLabel, required this.duration});
-
+class _PreviewBottomRow extends StatelessWidget {
+  const _PreviewBottomRow({required this.sourceLabel, required this.duration});
   final String sourceLabel;
   final Duration duration;
 
@@ -236,15 +247,24 @@ class _FormatRow extends StatelessWidget {
     return Row(
       children: <Widget>[
         FormatBadge(sourceLabel),
-        const SizedBox(width: AppDimens.spaceSm),
+        const SizedBox(width: AppDimens.space8),
         const Icon(Icons.arrow_forward_rounded,
-            size: 14, color: AppColors.textSecondary),
-        const SizedBox(width: AppDimens.spaceSm),
+            size: 16, color: AppColors.textPrimary),
+        const SizedBox(width: AppDimens.space8),
         const FormatBadge('WAV', filled: true),
         const Spacer(),
-        Text(
-          DurationFormatter.format(duration),
-          style: AppTextStyles.duration,
+        Container(
+          height: AppDimens.formatPillHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0x1AFFFFFF),
+            borderRadius: BorderRadius.circular(AppDimens.radius16),
+          ),
+          child: Text(
+            DurationFormatter.format(duration),
+            style: AppTextStyles.formatBadge,
+          ),
         ),
       ],
     );
@@ -260,29 +280,28 @@ class _CropAudioButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+        borderRadius: BorderRadius.circular(AppDimens.radius20),
         onTap: onTap,
         child: Ink(
-          height: 48,
+          height: AppDimens.primaryButtonHeight,
           decoration: BoxDecoration(
             border: Border.all(
-              color: AppColors.accentPrimary.withValues(alpha: 0.45),
+              color: AppColors.accentSolid.withValues(alpha: 0.4),
               width: 1.5,
             ),
-            borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+            borderRadius: BorderRadius.circular(AppDimens.radius20),
           ),
           child: Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const Icon(Icons.crop_rounded,
-                    color: AppColors.accentPrimary, size: 18),
-                const SizedBox(width: AppDimens.spaceSm),
+                    color: AppColors.accentSolid, size: 18),
+                const SizedBox(width: AppDimens.space8),
                 Text(
                   'Crop Audio',
-                  style: AppTextStyles.button.copyWith(
-                    color: AppColors.accentPrimary,
-                  ),
+                  style: AppTextStyles.button
+                      .copyWith(color: AppColors.accentSolid),
                 ),
               ],
             ),
@@ -297,7 +316,6 @@ class _PlayerBar extends StatelessWidget {
   const _PlayerBar({
     required this.playing,
     required this.position,
-    required this.remaining,
     required this.duration,
     required this.onToggle,
     required this.onSeek,
@@ -305,32 +323,43 @@ class _PlayerBar extends StatelessWidget {
 
   final bool playing;
   final Duration position;
-  final Duration remaining;
   final Duration duration;
   final VoidCallback onToggle;
   final ValueChanged<Duration> onSeek;
 
   @override
   Widget build(BuildContext context) {
-    final double total = duration.inMilliseconds.clamp(1, 1 << 31).toDouble();
+    final double total =
+        duration.inMilliseconds.clamp(1, 1 << 31).toDouble();
     final double pos = position.inMilliseconds.clamp(0, total).toDouble();
+    final Duration remaining = duration - position;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimens.spaceMd,
-        vertical: AppDimens.spaceMd,
-      ),
+      height: AppDimens.playerBarHeight,
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.space16),
       decoration: BoxDecoration(
         color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+        borderRadius: BorderRadius.circular(AppDimens.radius20),
+        border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
       ),
       child: Row(
         children: <Widget>[
-          IconButton(
-            iconSize: 32,
-            color: AppColors.accentPrimary,
-            icon: Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_filled),
-            onPressed: onToggle,
+          GestureDetector(
+            onTap: onToggle,
+            child: Container(
+              width: AppDimens.playerControlSize,
+              height: AppDimens.playerControlSize,
+              decoration: BoxDecoration(
+                color: AppColors.accentSolid.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: AppColors.accentSolid,
+                size: 26,
+              ),
+            ),
           ),
+          const SizedBox(width: AppDimens.space12),
           Text(DurationFormatter.format(position),
               style: AppTextStyles.duration),
           Expanded(
@@ -339,9 +368,9 @@ class _PlayerBar extends StatelessWidget {
                 trackHeight: 3,
                 thumbShape:
                     const RoundSliderThumbShape(enabledThumbRadius: 7),
-                activeTrackColor: AppColors.accentPrimary,
+                activeTrackColor: AppColors.accentSolid,
                 inactiveTrackColor:
-                    AppColors.accentPrimary.withValues(alpha: 0.2),
+                    AppColors.accentSolid.withValues(alpha: 0.2),
                 thumbColor: Colors.white,
                 overlayShape: SliderComponentShape.noOverlay,
               ),

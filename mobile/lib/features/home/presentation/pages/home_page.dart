@@ -19,7 +19,7 @@ import '../../../history/presentation/bloc/history_bloc.dart';
 import '../../../history/presentation/widgets/history_empty.dart';
 import '../../../history/presentation/widgets/history_grid.dart';
 
-/// Image#1 — главный экран приложения.
+/// Image#1 — Main Page (Figma).
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -61,82 +61,88 @@ class _HomePageState extends State<HomePage> {
 
   void _startConvert(String path) {
     if (FileUtils.isWav(path)) {
-      // Файл уже WAV — отправляем сразу на Result без конвертации.
-      context.go(
-        '/result',
-        extra: <String, Object?>{
-          'path': path,
-          'durationMs': 0,
-          'sourceFormat': 'wav',
-          'title': FileUtils.basenameWithoutExt(path),
-        },
-      );
+      context.go('/result', extra: <String, Object?>{
+        'path': path,
+        'durationMs': 0,
+        'sourceFormat': 'wav',
+        'title': FileUtils.basenameWithoutExt(path),
+      });
       return;
     }
     context.go('/processing', extra: path);
   }
 
-  void _submitYoutube(String url) {
-    context.go('/youtube', extra: url);
-  }
+  void _submitYoutube(String url) => context.go('/youtube', extra: url);
 
   @override
   Widget build(BuildContext context) {
     final double horizontal = PlatformUtils.horizontalPadding(context);
-    final bool isTablet = PlatformUtils.isTablet(context);
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: horizontal),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const SizedBox(height: AppDimens.spaceLg),
-                Row(
-                  children: <Widget>[
-                    IconButtonCircle(
-                      icon: CupertinoIcons.settings,
-                      onPressed: () => context.push('/settings'),
-                    ),
+      body: Stack(
+        children: <Widget>[
+          // Декоративный синий эллипс — едва виден из-под верхнего края
+          Positioned(
+            left: -232,
+            top: -617,
+            child: Container(
+              width: 839,
+              height: 839,
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  colors: <Color>[
+                    AppColors.accentGradientTop,
+                    AppColors.accentGradientBottom,
+                    Color(0x00000000),
                   ],
+                  stops: <double>[0.0, 0.6, 1.0],
                 ),
-                const SizedBox(height: AppDimens.spaceLg),
-                const AppLogo(),
-                const SizedBox(height: AppDimens.space2xl),
-                _SourceCards(
-                  isTablet: isTablet,
-                  onGallery: _pickFromGallery,
-                  onFiles: _pickFromFiles,
-                ),
-                const SizedBox(height: AppDimens.spaceLg),
-                UrlInputField(
-                  controller: _urlController,
-                  onSubmit: _submitYoutube,
-                ),
-                const SizedBox(height: AppDimens.space2xl),
-                const Text('History', style: AppTextStyles.subtitle),
-                const SizedBox(height: AppDimens.spaceMd),
-                _HistorySection(
-                  onTapItem: (HistoryItem item) => context.go(
-                    '/result',
-                    extra: <String, Object?>{
-                      'path': item.filePath,
-                      'durationMs': item.durationMs,
-                      'sourceFormat': item.sourceFormat.name,
-                      'title': item.title,
-                      'thumbnailPath': item.thumbnailPath,
-                    },
-                  ),
-                  onMore: (HistoryItem item) => _showMore(context, item),
-                ),
-                const SizedBox(height: AppDimens.space2xl),
-              ],
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-        ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: horizontal),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: AppDimens.space12),
+                  _Header(onSettings: () => context.push('/settings')),
+                  const SizedBox(height: AppDimens.space12),
+                  const AppLogo(),
+                  const SizedBox(height: AppDimens.space24),
+                  _SourceCardsRow(
+                    onGallery: _pickFromGallery,
+                    onFiles: _pickFromFiles,
+                  ),
+                  const SizedBox(height: AppDimens.space16),
+                  UrlInputField(
+                    controller: _urlController,
+                    onSubmit: _submitYoutube,
+                  ),
+                  const SizedBox(height: AppDimens.space24),
+                  Text('History', style: AppTextStyles.sectionTitle),
+                  const SizedBox(height: AppDimens.space14),
+                  _HistorySection(
+                    onTapItem: (HistoryItem item) => context.go(
+                      '/result',
+                      extra: <String, Object?>{
+                        'path': item.filePath,
+                        'durationMs': item.durationMs,
+                        'sourceFormat': item.sourceFormat.name,
+                        'title': item.title,
+                        'thumbnailPath': item.thumbnailPath,
+                      },
+                    ),
+                    onMore: (HistoryItem item) => _showMore(context, item),
+                  ),
+                  const SizedBox(height: AppDimens.space24),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -153,14 +159,12 @@ class _HomePageState extends State<HomePage> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ListTile(
-              leading: const Icon(Icons.delete_outline,
-                  color: AppColors.danger),
-              title: const Text('Delete', style: AppTextStyles.body),
+              leading:
+                  const Icon(Icons.delete_outline, color: AppColors.danger),
+              title: Text('Delete', style: AppTextStyles.body),
               onTap: () {
                 if (item.id != null) {
-                  context
-                      .read<HistoryBloc>()
-                      .add(HistoryItemDeleted(item.id!));
+                  context.read<HistoryBloc>().add(HistoryItemDeleted(item.id!));
                 }
                 Navigator.of(sheetCtx).pop();
               },
@@ -172,39 +176,50 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _SourceCards extends StatelessWidget {
-  const _SourceCards({
-    required this.isTablet,
-    required this.onGallery,
-    required this.onFiles,
-  });
+class _Header extends StatelessWidget {
+  const _Header({required this.onSettings});
+  final VoidCallback onSettings;
 
-  final bool isTablet;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        IconButtonCircle(
+          icon: CupertinoIcons.settings,
+          onPressed: onSettings,
+        ),
+      ],
+    );
+  }
+}
+
+class _SourceCardsRow extends StatelessWidget {
+  const _SourceCardsRow({required this.onGallery, required this.onFiles});
+
   final VoidCallback onGallery;
   final VoidCallback onFiles;
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> cards = <Widget>[
-      Expanded(
-        child: IconCardButton(
-          label: 'Gallery',
-          icon: const Icon(Icons.image_outlined,
-              color: AppColors.accentPrimary, size: 22),
-          onTap: onGallery,
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: IconCardButton(
+            label: 'Gallery',
+            icon: Icons.image_outlined,
+            onTap: onGallery,
+          ),
         ),
-      ),
-      const SizedBox(width: AppDimens.spaceMd),
-      Expanded(
-        child: IconCardButton(
-          label: 'Files',
-          icon: const Icon(Icons.folder_outlined,
-              color: AppColors.accentPrimary, size: 22),
-          onTap: onFiles,
+        const SizedBox(width: AppDimens.space16),
+        Expanded(
+          child: IconCardButton(
+            label: 'Files',
+            icon: Icons.folder_outlined,
+            onTap: onFiles,
+          ),
         ),
-      ),
-    ];
-    return Row(children: cards);
+      ],
+    );
   }
 }
 
@@ -221,17 +236,17 @@ class _HistorySection extends StatelessWidget {
         return switch (state) {
           HistoryInitial() || HistoryLoading() => const Center(
               child: Padding(
-                padding: EdgeInsets.all(AppDimens.space2xl),
-                child: CircularProgressIndicator(
-                    color: AppColors.accentPrimary),
+                padding: EdgeInsets.all(AppDimens.space24),
+                child:
+                    CircularProgressIndicator(color: AppColors.accentSolid),
               ),
             ),
           HistoryEmpty() => const HistoryEmptyView(),
           HistoryLoaded(:final List<HistoryItem> items) =>
             HistoryGrid(items: items, onTap: onTapItem, onMore: onMore),
           HistoryError(:final String message) => Padding(
-              padding: const EdgeInsets.all(AppDimens.spaceLg),
-              child: Text(message, style: AppTextStyles.bodySecondary),
+              padding: const EdgeInsets.all(AppDimens.space16),
+              child: Text(message, style: AppTextStyles.subtitle),
             ),
         };
       },

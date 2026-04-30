@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_text_styles.dart';
@@ -9,8 +10,8 @@ class AppTheme {
   static ThemeData dark() {
     final ColorScheme scheme = ColorScheme.dark(
       surface: AppColors.background,
-      primary: AppColors.accentPrimary,
-      secondary: AppColors.accentLight,
+      primary: AppColors.accentSolid,
+      secondary: AppColors.accentGradientTop,
       error: AppColors.danger,
       onSurface: AppColors.textPrimary,
       onPrimary: AppColors.textPrimary,
@@ -20,24 +21,17 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: '.SF Pro Display',
+      textTheme: GoogleFonts.interTextTheme(
+        ThemeData.dark().textTheme,
+      ).apply(bodyColor: AppColors.textPrimary, displayColor: AppColors.textPrimary),
       iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      textTheme: const TextTheme(
-        displayLarge: AppTextStyles.title,
-        headlineMedium: AppTextStyles.headline,
-        titleMedium: AppTextStyles.subtitle,
-        bodyLarge: AppTextStyles.body,
-        bodyMedium: AppTextStyles.bodySecondary,
-        labelLarge: AppTextStyles.button,
-        labelMedium: AppTextStyles.caption,
-      ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.subtitle,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: AppTextStyles.appBarTitle,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       splashFactory: NoSplash.splashFactory,

@@ -1,87 +1,125 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
+/// Типографика: Inter (Google Fonts). Точные размеры/lh/letter spacing — из Figma.
 class AppTextStyles {
   AppTextStyles._();
 
-  static const String _family = '.SF Pro Display';
+  static TextStyle _inter({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required double height,
+    Color color = AppColors.textPrimary,
+    double letterSpacing = 0,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height / fontSize,
+      color: color,
+      letterSpacing: letterSpacing,
+    );
+  }
 
-  static const TextStyle title = TextStyle(
-    fontFamily: _family,
+  // Display "Craft" / 28 ExtraBold
+  static TextStyle display = _inter(
     fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.4,
-    height: 1.1,
+    fontWeight: FontWeight.w800,
+    height: 33.6,
   );
 
-  static const TextStyle headline = TextStyle(
-    fontFamily: _family,
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: -0.2,
+  // AppBar title 24 ExtraBold ("Result", "Convert Files")
+  static TextStyle appBarTitle = _inter(
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    height: 28.8,
   );
 
-  static const TextStyle subtitle = TextStyle(
-    fontFamily: _family,
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
-
-  static const TextStyle body = TextStyle(
-    fontFamily: _family,
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
-    height: 1.4,
-  );
-
-  static const TextStyle bodySecondary = TextStyle(
-    fontFamily: _family,
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
+  // Subtitle 16 Medium 70% under hero
+  static TextStyle subtitle = _inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 20.8,
     color: AppColors.textSecondary,
-    height: 1.4,
   );
 
-  static const TextStyle caption = TextStyle(
-    fontFamily: _family,
+  // Card label 18 SemiBold (Gallery / Files)
+  static TextStyle cardLabel = _inter(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 23.4,
+    letterSpacing: -0.36,
+  );
+
+  // Section title 16 SemiBold (History / Choose Convertion Format)
+  static TextStyle sectionTitle = _inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 17.6,
+    letterSpacing: -0.32,
+  );
+
+  // Primary button 16 SemiBold
+  static TextStyle button = _inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 17.6,
+    letterSpacing: -0.32,
+  );
+
+  // Body 16 Medium ("Paste your link" placeholder)
+  static TextStyle body = _inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 19.2,
+  );
+
+  // Format pill large 14 Medium (in Result preview)
+  static TextStyle formatBadge = _inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    height: 16.8,
+  );
+
+  // Format pill small 12 Medium (in History card)
+  static TextStyle formatBadgeSm = _inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 14.4,
+  );
+
+  // Duration 13 Medium (crop trimmer "03:56")
+  static TextStyle duration = _inter(
     fontSize: 13,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
+    height: 16.9,
   );
 
-  static const TextStyle cardLabel = TextStyle(
-    fontFamily: _family,
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
-
-  static const TextStyle button = TextStyle(
-    fontFamily: _family,
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.1,
-  );
-
-  static const TextStyle badge = TextStyle(
-    fontFamily: _family,
-    fontSize: 12,
+  // Processing modal title
+  static TextStyle processingTitle = _inter(
+    fontSize: 24,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.4,
+    height: 28.8,
+    letterSpacing: -0.48,
   );
 
-  static const TextStyle duration = TextStyle(
-    fontFamily: _family,
-    fontSize: 12,
+  // Processing modal subtitle (white@60%)
+  static TextStyle processingSub = _inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 19.2,
+    color: AppColors.textTertiary,
+  );
+
+  // Status bar "9:41"
+  static const TextStyle statusBar = TextStyle(
+    fontFamily: '.SF Pro Text',
+    fontSize: 17,
     fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-    letterSpacing: 0.2,
+    height: 22 / 17,
+    letterSpacing: -0.408,
+    color: AppColors.textPrimary,
   );
 }

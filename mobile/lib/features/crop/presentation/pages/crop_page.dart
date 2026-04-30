@@ -20,7 +20,6 @@ class CropPage extends StatefulWidget {
     required this.totalMs,
     super.key,
   });
-
   final String sourcePath;
   final int totalMs;
 
@@ -57,117 +56,133 @@ class _CropPageState extends State<CropPage> {
   }
 
   void _toggle() {
-    if (_player.playing) {
-      _player.pause();
-    } else {
-      _player.play();
-    }
+    _player.playing ? _player.pause() : _player.play();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: BlocConsumer<CropBloc, CropState>(
-          listener: (BuildContext context, CropState state) {
-            if (state is CropSaved) {
-              context.go('/result', extra: <String, Object?>{
-                'path': state.outputPath,
-                'durationMs': state.duration.inMilliseconds,
-                'sourceFormat': 'wav',
-                'title': 'Cropped',
-              });
-            } else if (state is CropError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: AppColors.danger,
+      body: Stack(
+        children: <Widget>[
+          Positioned(
+            left: -232,
+            top: -617,
+            child: Container(
+              width: 839,
+              height: 839,
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  colors: <Color>[
+                    AppColors.accentGradientTop,
+                    AppColors.accentGradientBottom,
+                    Color(0x00000000),
+                  ],
+                  stops: <double>[0.0, 0.6, 1.0],
                 ),
-              );
-            }
-          },
-          builder: (BuildContext context, CropState state) {
-            return Column(
-              children: <Widget>[
-                _AppBar(onClose: () => context.pop()),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimens.spaceLg,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: BlocConsumer<CropBloc, CropState>(
+              listener: (BuildContext context, CropState state) {
+                if (state is CropSaved) {
+                  context.go('/result', extra: <String, Object?>{
+                    'path': state.outputPath,
+                    'durationMs': state.duration.inMilliseconds,
+                    'sourceFormat': 'wav',
+                    'title': 'Cropped',
+                  });
+                } else if (state is CropError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.danger,
                     ),
-                    child: switch (state) {
-                      CropInitial() ||
-                      CropSaving() ||
-                      CropSaved() =>
-                        const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.accentPrimary,
-                          ),
-                        ),
-                      CropReady() => _CropBody(
-                          state: state,
-                          playing: _playing,
-                          onToggle: _toggle,
-                        ),
-                      CropError(:final CropReady previous) => _CropBody(
-                          state: previous,
-                          playing: _playing,
-                          onToggle: _toggle,
-                        ),
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppDimens.spaceLg,
-                    AppDimens.spaceLg,
-                    AppDimens.spaceLg,
-                    AppDimens.space2xl,
-                  ),
-                  child: PrimaryButton(
-                    label: 'Save',
-                    loading: state is CropSaving,
-                    onPressed: state is CropReady
-                        ? () => context
-                            .read<CropBloc>()
-                            .add(const CropSaveRequested())
-                        : null,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                  );
+                }
+              },
+              builder: (BuildContext context, CropState state) {
+                return Column(
+                  children: <Widget>[
+                    _CropAppBar(onClose: () => context.pop()),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimens.space16),
+                        child: switch (state) {
+                          CropInitial() ||
+                          CropSaving() ||
+                          CropSaved() =>
+                            const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.accentSolid,
+                              ),
+                            ),
+                          CropReady() => _CropBody(
+                              state: state,
+                              playing: _playing,
+                              onToggle: _toggle,
+                            ),
+                          CropError(:final CropReady previous) => _CropBody(
+                              state: previous,
+                              playing: _playing,
+                              onToggle: _toggle,
+                            ),
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppDimens.space16,
+                        AppDimens.space16,
+                        AppDimens.space16,
+                        AppDimens.space24,
+                      ),
+                      child: PrimaryButton(
+                        label: 'Save',
+                        loading: state is CropSaving,
+                        onPressed: state is CropReady
+                            ? () => context
+                                .read<CropBloc>()
+                                .add(const CropSaveRequested())
+                            : null,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _AppBar extends StatelessWidget {
-  const _AppBar({required this.onClose});
+class _CropAppBar extends StatelessWidget {
+  const _CropAppBar({required this.onClose});
   final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(gradient: AppColors.appBarGradient),
-      padding: const EdgeInsets.fromLTRB(
-        AppDimens.spaceLg,
-        AppDimens.spaceMd,
-        AppDimens.spaceLg,
-        AppDimens.spaceLg,
-      ),
-      child: Row(
-        children: <Widget>[
-          IconButtonCircle(icon: Icons.close_rounded, onPressed: onClose),
-          const Expanded(
-            child: Center(
-              child: Text('Result', style: AppTextStyles.subtitle),
+    return SizedBox(
+      height: AppDimens.appBarHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppDimens.space16),
+        child: Row(
+          children: <Widget>[
+            IconButtonCircle(icon: Icons.close_rounded, onPressed: onClose),
+            Expanded(
+              child: Center(
+                child: Text('Result', style: AppTextStyles.appBarTitle),
+              ),
             ),
-          ),
-          const SizedBox(width: AppDimens.iconButtonSize),
-        ],
+            const SizedBox(width: AppDimens.headerButtonSize),
+          ],
+        ),
       ),
     );
   }
@@ -186,15 +201,16 @@ class _CropBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: AppDimens.spaceLg),
+      padding: const EdgeInsets.symmetric(vertical: AppDimens.space14),
       child: Column(
         children: <Widget>[
-          const AudioPreviewBlock(),
-          const SizedBox(height: AppDimens.spaceMd),
-          _FormatRow(duration: state.total),
-          const SizedBox(height: AppDimens.space3xl),
-          _RangeReadout(state: state),
-          const SizedBox(height: AppDimens.spaceLg),
+          AudioPreviewBlock(
+            height: AppDimens.previewIconOnlyHeight,
+            bottomOverlay: _PreviewBottomRow(duration: state.total),
+          ),
+          const SizedBox(height: AppDimens.space24),
+          _RangePill(state: state),
+          const SizedBox(height: AppDimens.space14),
           _Trimmer(state: state, playing: playing, onToggle: onToggle),
         ],
       ),
@@ -202,8 +218,8 @@ class _CropBody extends StatelessWidget {
   }
 }
 
-class _FormatRow extends StatelessWidget {
-  const _FormatRow({required this.duration});
+class _PreviewBottomRow extends StatelessWidget {
+  const _PreviewBottomRow({required this.duration});
   final Duration duration;
 
   @override
@@ -211,54 +227,59 @@ class _FormatRow extends StatelessWidget {
     return Row(
       children: <Widget>[
         const FormatBadge('MP3'),
-        const SizedBox(width: AppDimens.spaceSm),
+        const SizedBox(width: AppDimens.space8),
         const Icon(Icons.arrow_forward_rounded,
-            size: 14, color: AppColors.textSecondary),
-        const SizedBox(width: AppDimens.spaceSm),
+            size: 16, color: AppColors.textPrimary),
+        const SizedBox(width: AppDimens.space8),
         const FormatBadge('WAV', filled: true),
         const Spacer(),
-        Text(
-          DurationFormatter.format(duration),
-          style: AppTextStyles.duration,
+        Container(
+          height: AppDimens.formatPillHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0x1AFFFFFF),
+            borderRadius: BorderRadius.circular(AppDimens.radius16),
+          ),
+          child: Text(
+            DurationFormatter.format(duration),
+            style: AppTextStyles.formatBadge,
+          ),
         ),
       ],
     );
   }
 }
 
-class _RangeReadout extends StatelessWidget {
-  const _RangeReadout({required this.state});
+class _RangePill extends StatelessWidget {
+  const _RangePill({required this.state});
   final CropReady state;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimens.spaceLg,
-        vertical: AppDimens.spaceSm,
-      ),
+      height: 29,
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.space14),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+        borderRadius: BorderRadius.circular(AppDimens.radius24),
       ),
       child: Text.rich(
         TextSpan(
-          style: AppTextStyles.duration.copyWith(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-          ),
+          style: AppTextStyles.duration,
           children: <InlineSpan>[
             TextSpan(text: DurationFormatter.format(state.start)),
-            const TextSpan(text: '  –  ',
-                style: TextStyle(color: AppColors.textSecondary)),
+            const TextSpan(text: '  -  ',
+                style: TextStyle(color: AppColors.textPrimary)),
             TextSpan(
               text: DurationFormatter.format(state.end),
-              style: const TextStyle(color: AppColors.accentPrimary),
+              style: const TextStyle(color: AppColors.accentSolid),
             ),
             const TextSpan(text: '  '),
             TextSpan(
               text: DurationFormatter.format(state.total),
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: const TextStyle(color: AppColors.textFaded),
             ),
           ],
         ),
@@ -281,32 +302,37 @@ class _Trimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: AppDimens.cropTrimmerHeight,
       decoration: BoxDecoration(
         color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+        borderRadius: BorderRadius.circular(AppDimens.radius20),
+        border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
       ),
-      padding: const EdgeInsets.all(AppDimens.spaceMd),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimens.space12,
+      ),
       child: Row(
         children: <Widget>[
           GestureDetector(
             onTap: onToggle,
             child: Container(
-              width: 40,
-              height: 40,
+              width: AppDimens.playerControlSize,
+              height: AppDimens.playerControlSize,
               decoration: BoxDecoration(
-                color: AppColors.accentPrimary.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.accentSolid.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
               ),
               child: Icon(
-                playing ? Icons.pause : Icons.play_arrow,
-                color: AppColors.accentPrimary,
+                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: AppColors.accentSolid,
+                size: 26,
               ),
             ),
           ),
-          const SizedBox(width: AppDimens.spaceSm),
+          const SizedBox(width: AppDimens.space8),
           Expanded(
             child: SizedBox(
-              height: AppDimens.cropTrimmerHeight,
+              height: AppDimens.cropTrimmerHeight - 14,
               child: Stack(
                 children: <Widget>[
                   Positioned.fill(
@@ -314,21 +340,22 @@ class _Trimmer extends StatelessWidget {
                   ),
                   RangeSlider(
                     min: 0,
-                    max: state.total.inMilliseconds.toDouble().clamp(1, double.infinity),
+                    max: state.total.inMilliseconds
+                        .toDouble()
+                        .clamp(1, double.infinity),
                     values: RangeValues(
                       state.start.inMilliseconds.toDouble(),
                       state.end.inMilliseconds.toDouble(),
                     ),
-                    activeColor: AppColors.accentPrimary,
+                    activeColor: AppColors.accentSolid,
                     inactiveColor:
-                        AppColors.accentPrimary.withValues(alpha: 0.18),
+                        AppColors.accentSolid.withValues(alpha: 0.18),
                     onChanged: (RangeValues v) {
-                      context.read<CropBloc>().add(
-                            CropRangeChanged(
-                              start: Duration(milliseconds: v.start.toInt()),
-                              end: Duration(milliseconds: v.end.toInt()),
-                            ),
-                          );
+                      context.read<CropBloc>().add(CropRangeChanged(
+                            start:
+                                Duration(milliseconds: v.start.toInt()),
+                            end: Duration(milliseconds: v.end.toInt()),
+                          ));
                     },
                   ),
                 ],
@@ -345,7 +372,7 @@ class _WaveformPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = AppColors.accentPrimary.withValues(alpha: 0.5)
+      ..color = AppColors.accentSolid.withValues(alpha: 0.55)
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
     const int bars = 80;

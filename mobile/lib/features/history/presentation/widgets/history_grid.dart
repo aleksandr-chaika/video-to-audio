@@ -26,9 +26,10 @@ class HistoryGrid extends StatelessWidget {
       itemCount: items.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,
-        crossAxisSpacing: AppDimens.spaceMd,
-        mainAxisSpacing: AppDimens.spaceMd,
-        childAspectRatio: 1.0,
+        crossAxisSpacing: AppDimens.space14,
+        mainAxisSpacing: AppDimens.space14,
+        // Figma: 165×143 → ratio 165/143 ≈ 1.154
+        childAspectRatio: 165 / 143,
       ),
       itemBuilder: (BuildContext context, int index) {
         final HistoryItem item = items[index];

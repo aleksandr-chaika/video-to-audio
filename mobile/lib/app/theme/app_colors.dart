@@ -1,52 +1,50 @@
 import 'package:flutter/material.dart';
 
-/// Цветовые токены MP3 Craft (извлечены из мокапов Image #1–#4).
+/// Цветовые токены MP3 Craft. Источник — Figma (см. docs/design-tokens.md).
 class AppColors {
   AppColors._();
 
-  // Background
-  static const Color background = Color(0xFF0A0E1A);
-  static const Color surfaceDark = Color(0xFF11182B);
-  static const Color surfaceCard = Color(0xFF1A2238);
-  static const Color appBarBlue = Color(0xFF0E1A33);
-  static const Color appBarBlueEnd = Color(0xFF1B2D5A);
+  // Backgrounds
+  static const Color background = Color(0xFF111111);
+  static const Color surfaceDark = Color(0xFF14191F);
+  static const Color surfaceCard = Color(0xFF14191F);
+  static const Color modalBox = Color(0xFF1C1C1C);
 
-  // Accent gradient (синие карточки и кнопки)
-  static const Color accentLight = Color(0xFF6FA9FF);
-  static const Color accentPrimary = Color(0xFF3B82F6);
-  static const Color accentDeep = Color(0xFF2256D6);
+  // Accent
+  static const Color accentGradientTop = Color(0xFF6298FF);
+  static const Color accentGradientBottom = Color(0xFF1B63F8);
+  static const Color accentSolid = Color(0xFF3F7EFB);
+  static const Color accentDeep = Color(0xFF1B63F8);
 
   static const LinearGradient accentGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: <Color>[Color(0xFF7CB6FF), Color(0xFF3679FF), Color(0xFF1E5BD9)],
-    stops: <double>[0.0, 0.55, 1.0],
-  );
-
-  static const LinearGradient cardGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: <Color>[Color(0xFF8FBEFF), Color(0xFF3F86FF), Color(0xFF1E54C9)],
-    stops: <double>[0.0, 0.5, 1.0],
-  );
-
-  static const LinearGradient appBarGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <Color>[Color(0xFF1F3A6E), Color(0xFF0E1A33)],
+    colors: <Color>[Color(0xFF6298FF), Color(0xFF1B63F8)],
+  );
+
+  /// Тонкая обводка (white@20% → 0%) поверх синих градиентов.
+  static const LinearGradient strokeAccentGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: <Color>[Color(0x33FFFFFF), Color(0x00FFFFFF)],
+  );
+
+  /// Тонкая обводка (white@5% → 0%) для тёмных surface.
+  static const LinearGradient strokeSurfaceGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: <Color>[Color(0x0DFFFFFF), Color(0x00FFFFFF)],
   );
 
   // Text
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF8E97A6);
-  static const Color textMuted = Color(0xFF5A6577);
+  static const Color textSecondary = Color(0xB3FFFFFF); // 70%
+  static const Color textTertiary = Color(0x99FFFFFF); // 60%
+  static const Color textMuted = Color(0x4DFFFFFF); // 30%
+  static const Color textFaded = Color(0x40FFFFFF); // 25%
 
-  // Status
-  static const Color danger = Color(0xFFFF3B30);
+  // Status / utility
+  static const Color danger = Color(0xFFF42727);
+  static const Color youtubeRed = Color(0xFFFF0000);
   static const Color success = Color(0xFF34C759);
-  static const Color warning = Color(0xFFFFCC00);
-
-  // Semantic
-  static const Color divider = Color(0xFF1F2A45);
-  static const Color iconButtonBg = Color(0xFF20283C);
 }

@@ -3,16 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/utils/file_utils.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../history/domain/entities/history_item.dart';
 import '../../../history/presentation/bloc/history_bloc.dart';
-import '../../../../core/utils/file_utils.dart';
 import '../bloc/convert_bloc.dart';
 
-/// Image#2: модальное окно «Processing…» во время конвертации локального файла.
+/// Image#2 — Process Loading. Полноэкранный модал поверх затемнения.
 class ProcessingPage extends StatefulWidget {
   const ProcessingPage({required this.sourcePath, super.key});
-
   final String sourcePath;
 
   @override
@@ -32,8 +31,8 @@ class _ProcessingPageState extends State<ProcessingPage> {
       listener: (BuildContext context, ConvertState state) {
         switch (state) {
           case ConvertDone():
-            final SourceFormat src =
-                SourceFormatX.fromString(FileUtils.extensionOf(state.sourcePath));
+            final SourceFormat src = SourceFormatX.fromString(
+                FileUtils.extensionOf(state.sourcePath));
             context.read<HistoryBloc>().add(
                   HistoryItemAdded(
                     HistoryItem(
@@ -44,19 +43,17 @@ class _ProcessingPageState extends State<ProcessingPage> {
                       filePath: state.wavPath,
                       durationMs: state.durationMs,
                       createdAt: DateTime.now(),
-                      title: FileUtils.basenameWithoutExt(state.sourcePath),
+                      title:
+                          FileUtils.basenameWithoutExt(state.sourcePath),
                     ),
                   ),
                 );
-            context.go(
-              '/result',
-              extra: <String, Object?>{
-                'path': state.wavPath,
-                'durationMs': state.durationMs,
-                'sourceFormat': src.name,
-                'title': FileUtils.basenameWithoutExt(state.sourcePath),
-              },
-            );
+            context.go('/result', extra: <String, Object?>{
+              'path': state.wavPath,
+              'durationMs': state.durationMs,
+              'sourceFormat': src.name,
+              'title': FileUtils.basenameWithoutExt(state.sourcePath),
+            });
           case ConvertFailure(:final String message):
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

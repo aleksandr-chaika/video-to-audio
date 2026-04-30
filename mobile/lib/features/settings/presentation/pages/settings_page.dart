@@ -15,7 +15,7 @@ class SettingsPage extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppDimens.spaceLg),
+          padding: const EdgeInsets.all(AppDimens.space16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -25,15 +25,12 @@ class SettingsPage extends StatelessWidget {
                     icon: Icons.arrow_back_rounded,
                     onPressed: () => context.pop(),
                   ),
-                  const SizedBox(width: AppDimens.spaceMd),
-                  const Text('Settings', style: AppTextStyles.headline),
+                  const SizedBox(width: AppDimens.space12),
+                  Text('Settings', style: AppTextStyles.appBarTitle),
                 ],
               ),
-              const SizedBox(height: AppDimens.space2xl),
-              const Text(
-                'MP3 Craft v0.1.0',
-                style: AppTextStyles.bodySecondary,
-              ),
+              const SizedBox(height: AppDimens.space24),
+              Text('MP3 Craft v0.1.0', style: AppTextStyles.subtitle),
             ],
           ),
         ),
