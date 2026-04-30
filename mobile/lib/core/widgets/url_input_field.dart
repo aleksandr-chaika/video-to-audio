@@ -191,8 +191,25 @@ class _YouTubeHeader extends StatelessWidget {
       children: <Widget>[
         const Icon(Icons.link_rounded,
             size: 20, color: AppColors.textPrimary),
-        const SizedBox(width: AppDimens.space6),
-        // YouTube wordmark: white "You" + red rounded "Tube"
+        const SizedBox(width: AppDimens.space8),
+        Image.asset(
+          'assets/images/youtube_logo.png',
+          height: 20,
+          fit: BoxFit.contain,
+          errorBuilder: (c, o, s) => const _YouTubeWordmarkFallback(),
+        ),
+      ],
+    );
+  }
+}
+
+class _YouTubeWordmarkFallback extends StatelessWidget {
+  const _YouTubeWordmarkFallback();
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(

@@ -5,7 +5,7 @@ import '../../../../app/theme/app_dimens.dart';
 import '../../../../app/theme/app_text_styles.dart';
 
 /// Empty history state — Image#1, второй фрейм.
-/// Большой круг #14191F + 3D-микрофон в центре + "wave bars" по бокам.
+/// Большой круг #14191F + 3D-микрофон в центре + волны по бокам.
 class HistoryEmptyView extends StatelessWidget {
   const HistoryEmptyView({super.key});
 
@@ -16,7 +16,7 @@ class HistoryEmptyView extends StatelessWidget {
       child: Column(
         children: <Widget>[
           SizedBox(
-            width: 140,
+            width: 160,
             height: 140,
             child: Stack(
               alignment: Alignment.center,
@@ -30,8 +30,17 @@ class HistoryEmptyView extends StatelessWidget {
                   ),
                 ),
                 Positioned.fill(child: CustomPaint(painter: _MicWavePainter())),
-                const Icon(Icons.mic_rounded,
-                    size: 56, color: AppColors.accentSolid),
+                Image.asset(
+                  'assets/images/mic_3d.png',
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, o, s) => const Icon(
+                    Icons.mic_rounded,
+                    size: 56,
+                    color: AppColors.accentSolid,
+                  ),
+                ),
               ],
             ),
           ),
@@ -69,7 +78,7 @@ class _MicWavePainter extends CustomPainter {
     final double step = size.width / bars;
     for (int i = 0; i < bars; i++) {
       final double x = i * step + step / 2;
-      // Hide center 6 bars (occupied by mic icon)
+      // Скрыть центральные полосы — там 3D mic
       if (i >= 6 && i <= 11) continue;
       final double normalized = (i / bars - 0.5).abs();
       final double h = (1 - normalized) * size.height * 0.36 + 6;
