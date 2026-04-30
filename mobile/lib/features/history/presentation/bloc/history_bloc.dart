@@ -40,13 +40,19 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
 
   Future<void> _onAdd(
       HistoryItemAdded event, Emitter<HistoryState> emit) async {
-    await _addItem(event.item);
-    add(const HistoryLoadRequested());
+    final result = await _addItem(event.item);
+    result.fold(
+      (l) => emit(HistoryError(l.message)),
+      (_) => add(const HistoryLoadRequested()),
+    );
   }
 
   Future<void> _onDelete(
       HistoryItemDeleted event, Emitter<HistoryState> emit) async {
-    await _deleteItem(event.id);
-    add(const HistoryLoadRequested());
+    final result = await _deleteItem(event.id);
+    result.fold(
+      (l) => emit(HistoryError(l.message)),
+      (_) => add(const HistoryLoadRequested()),
+    );
   }
 }
