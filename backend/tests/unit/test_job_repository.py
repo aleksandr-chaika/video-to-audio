@@ -57,3 +57,30 @@ async def test_error_code_persists(fake_redis: object) -> None:
     assert fetched is not None
     assert fetched.error_code == ErrorCode.BOT_DETECTED
     assert fetched.error_message == "bot"
+
+
+@pytest.mark.asyncio
+async def test_get_returns_none_on_invalid_json(fake_redis: object) -> None:
+    """schema-drift / повреждение payload не должно приводить к 500."""
+    repo = RedisJobRepository(fake_redis, ttl_sec=60)  # type: ignore[arg-type]
+    await fake_redis.set("mp3craft:job:badjson", "not json")  # type: ignore[attr-defined]
+    assert await repo.get("badjson") is None
+
+
+@pytest.mark.asyncio
+async def test_get_returns_none_on_schema_mismatch(fake_redis: object) -> None:
+    repo = RedisJobRepository(fake_redis, ttl_sec=60)  # type: ignore[arg-type]
+    await fake_redis.set(  # type: ignore[attr-defined]
+        "mp3craft:job:schema", '{"unexpected": "shape"}'
+    )
+    assert await repo.get("schema") is None
+
+
+@pytest.mark.asyncio
+async def test_get_returns_none_on_invalid_status_value(fake_redis: object) -> None:
+    repo = RedisJobRepository(fake_redis, ttl_sec=60)  # type: ignore[arg-type]
+    await fake_redis.set(  # type: ignore[attr-defined]
+        "mp3craft:job:badstatus",
+        '{"job_id":"x","url":"u","status":"WAT","progress":0}',
+    )
+    assert await repo.get("badstatus") is None

@@ -121,4 +121,61 @@ void main() {
       verify(() => getHistory(any())).called(1);
     },
   );
+
+  // ---- regression: FE-1 — silent data loss при Left из usecase ----
+
+  blocTest<HistoryBloc, HistoryState>(
+    'add emits HistoryError when AddItemUseCase returns Left',
+    build: () {
+      when(() => addItem(any())).thenAnswer(
+        (_) async => const Left<Failure, HistoryItem>(StorageFailure('disk full')),
+      );
+      return build();
+    },
+    act: (HistoryBloc bloc) => bloc.add(HistoryItemAdded(sample())),
+    expect: () => <Matcher>[
+      isA<HistoryError>(),
+    ],
+    verify: (HistoryBloc _) {
+      verify(() => addItem(any())).called(1);
+      verifyNever(() => getHistory(any()));
+    },
+  );
+
+  blocTest<HistoryBloc, HistoryState>(
+    'delete emits HistoryError when DeleteItemUseCase returns Left',
+    build: () {
+      when(() => deleteItem(any())).thenAnswer(
+        (_) async => const Left<Failure, Unit>(StorageFailure('locked')),
+      );
+      return build();
+    },
+    act: (HistoryBloc bloc) => bloc.add(const HistoryItemDeleted(1)),
+    expect: () => <Matcher>[
+      isA<HistoryError>(),
+    ],
+    verify: (HistoryBloc _) {
+      verify(() => deleteItem(any())).called(1);
+      verifyNever(() => getHistory(any()));
+    },
+  );
+
+  blocTest<HistoryBloc, HistoryState>(
+    'delete then triggers reload on success',
+    build: () {
+      when(() => deleteItem(any())).thenAnswer(
+        (_) async => const Right<Failure, Unit>(unit),
+      );
+      when(() => getHistory(any())).thenAnswer(
+        (_) async => const Right<Failure, List<HistoryItem>>(<HistoryItem>[]),
+      );
+      return build();
+    },
+    act: (HistoryBloc bloc) => bloc.add(const HistoryItemDeleted(1)),
+    wait: const Duration(milliseconds: 50),
+    verify: (HistoryBloc _) {
+      verify(() => deleteItem(any())).called(1);
+      verify(() => getHistory(any())).called(1);
+    },
+  );
 }

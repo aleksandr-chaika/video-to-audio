@@ -8,9 +8,7 @@ from app.repositories.job_repository import RedisJobRepository
 
 
 @pytest.mark.asyncio
-async def test_create_job_returns_202_with_job_id(
-    client: AsyncClient, fake_queue: object
-) -> None:
+async def test_create_job_returns_202_with_job_id(client: AsyncClient, fake_queue: object) -> None:
     response = await client.post(
         "/api/v1/youtube/jobs",
         json={"url": "https://youtube.com/watch?v=dQw4w9WgXcQ"},
@@ -59,9 +57,7 @@ async def test_get_job_returns_404_when_missing(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_job_returns_status(
-    client: AsyncClient, fake_redis: object
-) -> None:
+async def test_get_job_returns_status(client: AsyncClient, fake_redis: object) -> None:
     repo = RedisJobRepository(fake_redis, ttl_sec=60)  # type: ignore[arg-type]
     job = Job(
         job_id="test-job",
@@ -117,18 +113,76 @@ async def test_download_file_returns_409_when_failed(
 
 
 @pytest.mark.asyncio
-async def test_delete_job_removes_record(
-    client: AsyncClient, fake_redis: object
-) -> None:
+async def test_delete_job_removes_record(client: AsyncClient, fake_redis: object) -> None:
+    import uuid
+
+    job_id = str(uuid.uuid4())
     repo = RedisJobRepository(fake_redis, ttl_sec=60)  # type: ignore[arg-type]
     await repo.save(
         Job(
-            job_id="todel",
+            job_id=job_id,
             url="https://youtube.com/watch?v=x",
             status=JobStatus.COMPLETED,
             file_path="/tmp/nonexistent",
         )
     )
-    response = await client.delete("/api/v1/youtube/jobs/todel")
+    response = await client.delete(f"/api/v1/youtube/jobs/{job_id}")
     assert response.status_code == 204
-    assert await repo.get("todel") is None
+    assert await repo.get(job_id) is None
+
+
+# ---- regression: path traversal / file_path вне tmp_dir (BE-1) ---------------
+
+
+@pytest.mark.asyncio
+async def test_download_file_rejects_path_outside_tmp_dir(
+    client: AsyncClient, fake_redis: object
+) -> None:
+    """defence-in-depth: даже если worker / атакующий записал в Redis путь
+    за пределами tmp_dir, endpoint должен вернуть 404, а не отдать файл."""
+    repo = RedisJobRepository(fake_redis, ttl_sec=60)  # type: ignore[arg-type]
+    await repo.save(
+        Job(
+            job_id="malicious",
+            url="https://youtube.com/watch?v=x",
+            status=JobStatus.COMPLETED,
+            file_path="/etc/passwd",
+        )
+    )
+    response = await client.get("/api/v1/youtube/jobs/malicious/file")
+    assert response.status_code == 404
+    assert response.json()["code"] == "JOB_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_delete_job_with_invalid_id_is_noop(client: AsyncClient) -> None:
+    """job_id, не являющийся UUIDv4, не должен приводить к попытке rmtree.
+    Endpoint просто молча возвращает 204 (idempotency)."""
+    response = await client.delete("/api/v1/youtube/jobs/not-a-uuid")
+    assert response.status_code == 204
+
+
+# ---- regression: schema-drift / повреждённый payload в Redis (BE-3) ---------
+
+
+@pytest.mark.asyncio
+async def test_get_job_returns_404_when_redis_payload_corrupted(
+    client: AsyncClient, fake_redis: object
+) -> None:
+    """Если в Redis лежит невалидный JSON (или JSON с чужой схемой), endpoint
+    обязан ответить 404, а не упасть в 500."""
+    await fake_redis.set(  # type: ignore[attr-defined]
+        "mp3craft:job:broken", '{"this": "is not a job"}'
+    )
+    response = await client.get("/api/v1/youtube/jobs/broken")
+    assert response.status_code == 404
+    assert response.json()["code"] == "JOB_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_get_job_returns_404_when_redis_payload_invalid_json(
+    client: AsyncClient, fake_redis: object
+) -> None:
+    await fake_redis.set("mp3craft:job:badjson", "not-json{{{")  # type: ignore[attr-defined]
+    response = await client.get("/api/v1/youtube/jobs/badjson")
+    assert response.status_code == 404
