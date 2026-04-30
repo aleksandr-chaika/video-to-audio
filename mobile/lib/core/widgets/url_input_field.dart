@@ -107,10 +107,10 @@ class _UrlInputFieldState extends State<UrlInputField> {
           // примерно правую треть card и выходит вверх+вправо за границы.
           // Размер увеличен до 200×200, opacity 0.32 — заметный watermark.
           Positioned(
-            right: -30,
-            top: -55,
-            width: 200,
-            height: 200,
+            right: 16,
+            top: 8,
+            width: 67,
+            height: 67,
             child: IgnorePointer(
               child: Opacity(
                 opacity: 0.32,
