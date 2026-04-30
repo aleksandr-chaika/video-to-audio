@@ -40,7 +40,6 @@ class YouTubeService:
             "extract_audio_task",
             job.job_id,
             url,
-            _job_timeout=get_settings().job_timeout_sec,
         )
         logger.info("job_created", job_id=job.job_id, url=url)
         return job
