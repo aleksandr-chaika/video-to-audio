@@ -48,7 +48,7 @@ void main() {
         deleteItem: deleteItem,
       );
 
-  HistoryItem _sample() => HistoryItem(
+  HistoryItem sample() => HistoryItem(
         id: 1,
         sourceType: SourceType.youtube,
         sourceFormat: SourceFormat.mp4,
@@ -77,7 +77,7 @@ void main() {
     'emits loading → loaded when repository returns items',
     build: () {
       when(() => getHistory(any())).thenAnswer(
-        (_) async => Right<Failure, List<HistoryItem>>(<HistoryItem>[_sample()]),
+        (_) async => Right<Failure, List<HistoryItem>>(<HistoryItem>[sample()]),
       );
       return build();
     },
@@ -107,14 +107,14 @@ void main() {
     'add then triggers reload',
     build: () {
       when(() => addItem(any())).thenAnswer(
-        (_) async => Right<Failure, HistoryItem>(_sample()),
+        (_) async => Right<Failure, HistoryItem>(sample()),
       );
       when(() => getHistory(any())).thenAnswer(
-        (_) async => Right<Failure, List<HistoryItem>>(<HistoryItem>[_sample()]),
+        (_) async => Right<Failure, List<HistoryItem>>(<HistoryItem>[sample()]),
       );
       return build();
     },
-    act: (HistoryBloc bloc) => bloc.add(HistoryItemAdded(_sample())),
+    act: (HistoryBloc bloc) => bloc.add(HistoryItemAdded(sample())),
     wait: const Duration(milliseconds: 50),
     verify: (HistoryBloc _) {
       verify(() => addItem(any())).called(1);
