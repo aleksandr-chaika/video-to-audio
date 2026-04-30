@@ -49,22 +49,24 @@ class IconCardButton extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: <Widget>[
-                // Полупрозрачная иконка-декорация — visible-bbox 85.5×73.65
-                // по Figma (Image #21 selection): уменьшена с 114×114 до
-                // 85×74, расположена в правой нижней четверти card без
-                // торчания вверх. Watermark поверх gradient.
+                // Большая полупрозрачная декорация-watermark.
+                // По Image #27: иконка занимает ~60-70% card в правой
+                // части и слегка торчит сверху и справа. Visible icon
+                // bbox по Figma 85.5×74, но container нужен больше из-за
+                // padding'а внутри SVG/PNG → 170×140.
                 if (backgroundDecorationAsset != null)
                   Positioned(
-                    right: 6,
-                    top: 22,
-                    width: 86,
-                    height: 74,
+                    right: -10,
+                    top: -10,
+                    width: 170,
+                    height: 140,
                     child: IgnorePointer(
                       child: Opacity(
-                        opacity: 0.22,
+                        opacity: 0.32,
                         child: Image.asset(
                           backgroundDecorationAsset!,
                           fit: BoxFit.contain,
+                          alignment: Alignment.centerRight,
                           errorBuilder: (BuildContext c, Object err,
                                   StackTrace? st) =>
                               const SizedBox.shrink(),

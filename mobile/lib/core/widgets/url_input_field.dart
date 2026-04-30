@@ -103,20 +103,21 @@ class _UrlInputFieldState extends State<UrlInputField> {
               ),
             ),
           ),
-          // Декоративный YouTube play-icon — pixel-perfect по Figma 3:161:
-          // 146×146 на координатах left:226 top:-42 внутри card 343×121.
-          // opacity 0.22 чтобы был заметнее (ранее 0.12 — слишком subtle).
+          // Большая декорация YouTube play-icon — по Image #27 занимает
+          // примерно правую треть card и выходит вверх+вправо за границы.
+          // Размер увеличен до 200×200, opacity 0.32 — заметный watermark.
           Positioned(
-            left: 226,
-            top: -42,
-            width: 146,
-            height: 146,
+            right: -30,
+            top: -55,
+            width: 200,
+            height: 200,
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.22,
+                opacity: 0.32,
                 child: Image.asset(
                   'assets/images/yt_play_decoration.png',
                   fit: BoxFit.contain,
+                  alignment: Alignment.center,
                   errorBuilder: (BuildContext c, Object err, StackTrace? st) =>
                       const SizedBox.shrink(),
                 ),
