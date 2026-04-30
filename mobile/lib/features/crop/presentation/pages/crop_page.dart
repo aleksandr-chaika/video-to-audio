@@ -209,7 +209,8 @@ class _CropBody extends StatelessWidget {
       child: Column(
         children: <Widget>[
           AudioPreviewBlock(
-            height: AppDimens.previewIconOnlyHeight,
+            height: 280,
+            showWaveformBackground: true,
             bottomOverlay: _PreviewBottomRow(duration: state.total),
           ),
           const SizedBox(height: AppDimens.space24),
@@ -292,6 +293,13 @@ class _RangePill extends StatelessWidget {
   }
 }
 
+/// Crop trimmer — кастомный (Image #12 Figma):
+///  • круглая pause-кнопка слева, отдельно от waveform-области
+///  • dim waveform на всю ширину снаружи рамки
+///  • голубая прямоугольная рамка с rounded corners вокруг выделенного диапазона
+///  • bright waveform внутри рамки на синем фоне
+///  • две вертикальные белые палочки-ручки по краям рамки — drag для start/end
+///  • drag по самой рамке (между ручками) — двигает диапазон целиком
 class _Trimmer extends StatelessWidget {
   const _Trimmer({
     required this.state,
@@ -303,64 +311,216 @@ class _Trimmer extends StatelessWidget {
   final bool playing;
   final VoidCallback onToggle;
 
+  static const double _handleWidth = 22;
+  static const double _handleBarWidth = 2.5;
+  static const double _trimmerHeight = 80;
+  static const double _waveformHeight = 56;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: AppDimens.cropTrimmerHeight,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(AppDimens.radius20),
-        border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimens.space12,
-      ),
+    return SizedBox(
+      height: _trimmerHeight,
       child: Row(
         children: <Widget>[
           GestureDetector(
             onTap: onToggle,
             child: Container(
-              width: AppDimens.playerControlSize,
-              height: AppDimens.playerControlSize,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: AppColors.accentSolid.withValues(alpha: 0.2),
+                color: AppColors.surfaceDark,
                 shape: BoxShape.circle,
+                border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
               ),
-              child: Icon(
-                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: AppColors.accentSolid,
-                size: 26,
+              child: Center(
+                child: Icon(
+                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: AppColors.accentSolid,
+                  size: 22,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: AppDimens.space8),
+          const SizedBox(width: AppDimens.space12),
           Expanded(
-            child: SizedBox(
-              height: AppDimens.cropTrimmerHeight - 14,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints c) {
+                final double trackWidth = c.maxWidth;
+                return _TrimmerTrack(
+                  width: trackWidth,
+                  height: _trimmerHeight,
+                  waveformHeight: _waveformHeight,
+                  handleWidth: _handleWidth,
+                  handleBarWidth: _handleBarWidth,
+                  state: state,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrimmerTrack extends StatelessWidget {
+  const _TrimmerTrack({
+    required this.width,
+    required this.height,
+    required this.waveformHeight,
+    required this.handleWidth,
+    required this.handleBarWidth,
+    required this.state,
+  });
+
+  final double width;
+  final double height;
+  final double waveformHeight;
+  final double handleWidth;
+  final double handleBarWidth;
+  final CropReady state;
+
+  static const int _bars = 64;
+
+  double _msToX(int ms) {
+    final int total = state.total.inMilliseconds.clamp(1, 1 << 31);
+    return (ms / total) * width;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double startX = _msToX(state.start.inMilliseconds);
+    final double endX = _msToX(state.end.inMilliseconds);
+    final double minRangeWidth = handleWidth * 2 + 8;
+
+    void emitChange(Duration s, Duration e) {
+      context.read<CropBloc>().add(CropRangeChanged(start: s, end: e));
+    }
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          // Dim waveform на всю ширину
+          Positioned(
+            left: 0,
+            right: 0,
+            top: (height - waveformHeight) / 2,
+            height: waveformHeight,
+            child: CustomPaint(
+              painter: _WaveformPainter(
+                bars: _bars,
+                color: const Color(0x40FFFFFF),
+              ),
+            ),
+          ),
+          // Голубая рамка с яркой waveform внутри
+          Positioned(
+            left: startX,
+            top: 0,
+            width: (endX - startX).clamp(minRangeWidth, double.infinity),
+            height: height,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragUpdate: (DragUpdateDetails d) {
+                final int curStart = state.start.inMilliseconds;
+                final int curEnd = state.end.inMilliseconds;
+                final int totalMs = state.total.inMilliseconds;
+                final double dxMs =
+                    (d.delta.dx / width) * totalMs;
+                int newStart = curStart + dxMs.round();
+                int newEnd = curEnd + dxMs.round();
+                if (newStart < 0) {
+                  newEnd -= newStart;
+                  newStart = 0;
+                }
+                if (newEnd > totalMs) {
+                  newStart -= (newEnd - totalMs);
+                  newEnd = totalMs;
+                }
+                emitChange(
+                  Duration(milliseconds: newStart),
+                  Duration(milliseconds: newEnd),
+                );
+              },
               child: Stack(
                 children: <Widget>[
+                  // Синий фон рамки
                   Positioned.fill(
-                    child: CustomPaint(painter: _WaveformPainter()),
-                  ),
-                  RangeSlider(
-                    min: 0,
-                    max: state.total.inMilliseconds
-                        .toDouble()
-                        .clamp(1, double.infinity),
-                    values: RangeValues(
-                      state.start.inMilliseconds.toDouble(),
-                      state.end.inMilliseconds.toDouble(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.accentSolid,
+                        borderRadius:
+                            BorderRadius.circular(AppDimens.radius16),
+                      ),
                     ),
-                    activeColor: AppColors.accentSolid,
-                    inactiveColor:
-                        AppColors.accentSolid.withValues(alpha: 0.18),
-                    onChanged: (RangeValues v) {
-                      context.read<CropBloc>().add(CropRangeChanged(
-                            start:
-                                Duration(milliseconds: v.start.toInt()),
-                            end: Duration(milliseconds: v.end.toInt()),
-                          ));
-                    },
+                  ),
+                  // Bright waveform внутри
+                  Positioned(
+                    left: handleWidth,
+                    right: handleWidth,
+                    top: (height - waveformHeight) / 2,
+                    height: waveformHeight,
+                    child: ClipRect(
+                      child: CustomPaint(
+                        painter: _WaveformPainter(
+                          bars: _bars,
+                          color: Colors.white,
+                          // Совпадение фаз с dim waveform — рисуем относительно
+                          // полной ширины, но в clip-окне только часть.
+                          totalWidth: width,
+                          xOffset: -(startX + handleWidth),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Левая палочка-ручка
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: handleWidth,
+                    child: _Handle(
+                      barWidth: handleBarWidth,
+                      onDrag: (double dx) {
+                        final int totalMs = state.total.inMilliseconds;
+                        final double dxMs = (dx / width) * totalMs;
+                        int newStart =
+                            state.start.inMilliseconds + dxMs.round();
+                        final int maxStart = state.end.inMilliseconds -
+                            ((minRangeWidth / width) * totalMs).round();
+                        newStart = newStart.clamp(0, maxStart);
+                        emitChange(
+                          Duration(milliseconds: newStart),
+                          state.end,
+                        );
+                      },
+                    ),
+                  ),
+                  // Правая палочка-ручка
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: handleWidth,
+                    child: _Handle(
+                      barWidth: handleBarWidth,
+                      onDrag: (double dx) {
+                        final int totalMs = state.total.inMilliseconds;
+                        final double dxMs = (dx / width) * totalMs;
+                        int newEnd =
+                            state.end.inMilliseconds + dxMs.round();
+                        final int minEnd = state.start.inMilliseconds +
+                            ((minRangeWidth / width) * totalMs).round();
+                        newEnd = newEnd.clamp(minEnd, totalMs);
+                        emitChange(
+                          state.start,
+                          Duration(milliseconds: newEnd),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -372,20 +532,66 @@ class _Trimmer extends StatelessWidget {
   }
 }
 
+/// Вертикальная палочка-ручка (handle) — drag по горизонтали.
+class _Handle extends StatelessWidget {
+  const _Handle({required this.barWidth, required this.onDrag});
+  final double barWidth;
+  final ValueChanged<double> onDrag;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragUpdate: (DragUpdateDetails d) => onDrag(d.delta.dx),
+      child: Center(
+        child: Container(
+          width: barWidth,
+          height: 20,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(barWidth / 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Универсальный waveform-painter с псевдо-случайной амплитудой и стабильным
+/// seed (одинаковая фаза для dim/bright рендеров → совпадают визуально).
 class _WaveformPainter extends CustomPainter {
+  _WaveformPainter({
+    required this.bars,
+    required this.color,
+    this.totalWidth,
+    this.xOffset = 0,
+  });
+
+  final int bars;
+  final Color color;
+
+  /// Если задано — рисуем bars относительно totalWidth, а xOffset сдвигает.
+  /// Используется для bright waveform внутри ClipRect — чтобы фазы баров
+  /// совпали с dim waveform за пределами рамки.
+  final double? totalWidth;
+  final double xOffset;
+
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = AppColors.accentSolid.withValues(alpha: 0.55)
+      ..color = color
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
-    const int bars = 80;
-    final double step = size.width / bars;
+    final double w = totalWidth ?? size.width;
+    final double step = w / bars;
     final double centerY = size.height / 2;
     for (int i = 0; i < bars; i++) {
-      final double x = i * step + step / 2;
-      final double pseudo = ((i * 17 + 3) % 11) / 11.0;
-      final double h = (size.height * 0.4) * (0.3 + pseudo * 0.7);
+      final double x = i * step + step / 2 + xOffset;
+      if (x < -4 || x > size.width + 4) continue;
+      final double n1 = ((i * 9 + 13) % 17) / 17.0;
+      final double n2 = ((i * 5 + 3) % 11) / 11.0;
+      final double amp = (0.25 + n1 * 0.5 + n2 * 0.45).clamp(0.2, 1.0);
+      final double h = size.height * 0.85 * amp;
       canvas.drawLine(
         Offset(x, centerY - h / 2),
         Offset(x, centerY + h / 2),
@@ -395,5 +601,9 @@ class _WaveformPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _WaveformPainter old) =>
+      old.bars != bars ||
+      old.color != color ||
+      old.totalWidth != totalWidth ||
+      old.xOffset != xOffset;
 }
