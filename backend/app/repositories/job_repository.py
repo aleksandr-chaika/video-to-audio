@@ -6,7 +6,10 @@ from typing import Protocol
 from redis.asyncio import Redis
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.domain.job import Job
+
+logger = get_logger(__name__)
 
 
 class JobRepositoryProtocol(Protocol):
@@ -38,7 +41,19 @@ class RedisJobRepository:
             return None
         if isinstance(raw, bytes):
             raw = raw.decode("utf-8")
-        return Job.from_dict(json.loads(raw))
+        try:
+            data = json.loads(raw)
+            return Job.from_dict(data)
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+            # schema-drift / повреждённый payload: трактуем как "записи нет",
+            # чтобы пользователь получил понятный 404 вместо 500.
+            logger.warning(
+                "job_payload_invalid",
+                job_id=job_id,
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
+            return None
 
     async def delete(self, job_id: str) -> bool:
         deleted = await self._redis.delete(self._key(job_id))
