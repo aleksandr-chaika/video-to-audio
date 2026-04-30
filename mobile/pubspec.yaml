@@ -14,7 +14,10 @@ dependencies:
   dartz: ^0.10.1
   dio: ^5.9.2
   equatable: ^2.0.7
-  ffmpeg_kit_flutter_new: ^4.1.0
+  # ffmpeg_kit_flutter_* пакеты не имеют simulator-slice → собираем без них.
+  # На реальном устройстве: вернуть ffmpeg_kit_flutter_new и реальные импорты в
+  #   lib/features/convert/data/datasources/ffmpeg_local_ds.dart
+  #   lib/features/crop/data/datasources/ffmpeg_crop_ds.dart
   file_picker: ^11.0.2
   flutter:
     sdk: flutter
