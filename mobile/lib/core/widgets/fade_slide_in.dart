@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Простой fade-in + slide-up на старте экрана. Используется для
-/// staggered-появления блоков HomePage (header → hero → cards → input → history).
+/// Красивая stagger-анимация появления контента: fade + slide-up + scale.
+/// На старте экрана дочерние элементы появляются последовательно с
+/// небольшим offset delay, что создаёт ощущение «оживления» интерфейса.
 ///
 /// Применение:
 /// ```dart
@@ -12,8 +13,9 @@ class FadeSlideIn extends StatefulWidget {
     required this.child,
     super.key,
     this.delay = Duration.zero,
-    this.duration = const Duration(milliseconds: 480),
-    this.offsetY = 24,
+    this.duration = const Duration(milliseconds: 600),
+    this.offsetY = 28,
+    this.beginScale = 0.96,
     this.curve = Curves.easeOutCubic,
   });
 
@@ -21,6 +23,7 @@ class FadeSlideIn extends StatefulWidget {
   final Duration delay;
   final Duration duration;
   final double offsetY;
+  final double beginScale;
   final Curve curve;
 
   @override
@@ -36,6 +39,10 @@ class _FadeSlideInState extends State<FadeSlideIn>
   late final Animation<Offset> _slide = Tween<Offset>(
     begin: Offset(0, widget.offsetY / 100),
     end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+  late final Animation<double> _scale = Tween<double>(
+    begin: widget.beginScale,
+    end: 1.0,
   ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
   @override
@@ -56,7 +63,10 @@ class _FadeSlideInState extends State<FadeSlideIn>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(position: _slide, child: widget.child),
+      child: SlideTransition(
+        position: _slide,
+        child: ScaleTransition(scale: _scale, child: widget.child),
+      ),
     );
   }
 }

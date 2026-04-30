@@ -90,26 +90,11 @@ class _UrlInputFieldState extends State<UrlInputField> {
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: <Widget>[
-          // Декоративный blur-circle в правом верхнем углу.
+          // YouTube play-decoration: 120×120 повёрнут на -14° (Figma 3:161).
+          // Старый blur-circle 240×240 удалён — он был лишней декорацией.
           Positioned(
-            top: -130,
-            right: -130,
-            child: Container(
-              width: 240,
-              height: 240,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0x14FFFFFF),
-              ),
-            ),
-          ),
-          // Большая декорация YouTube play-icon — по Image #27 занимает
-          // примерно правую треть card и выходит вверх+вправо за границы.
-          // Размер увеличен до 200×200, opacity 0.32 — заметный watermark.
-          // YouTube play-decoration: 120×120 повёрнут на -14° (Figma 3:161)
-          Positioned(
-            right: -8,
-            top: -25,
+            right: -13,
+            top: -35,
             width: 120,
             height: 120,
             child: IgnorePointer(
