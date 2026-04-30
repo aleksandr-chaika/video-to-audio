@@ -20,6 +20,15 @@ from app.repositories.job_repository import JobRepositoryProtocol
 logger = get_logger(__name__)
 
 
+def _is_valid_job_id(value: str) -> bool:
+    """job_id всегда — UUIDv4. Это страхует от path traversal в delete/cleanup."""
+    try:
+        uuid.UUID(value)
+    except (ValueError, AttributeError):
+        return False
+    return True
+
+
 class YouTubeService:
     """Orchestration: create job, query status, return file path, cleanup."""
 
@@ -56,17 +65,39 @@ class YouTubeService:
             raise JobFailedError(message=job.error_message or "Конвертация не удалась")
         if job.status != JobStatus.COMPLETED or not job.file_path:
             raise JobNotReadyError()
-        path = Path(job.file_path)
+        # defence-in-depth: file_path берётся из Redis (записан worker'ом).
+        # Если запись скомпрометирована — возможна выдача произвольного файла.
+        tmp_root = self._tmp_dir.resolve()
+        try:
+            path = Path(job.file_path).resolve()
+            path.relative_to(tmp_root)
+        except (ValueError, OSError) as exc:
+            logger.warning(
+                "file_path_outside_tmp",
+                job_id=job_id,
+                file_path=job.file_path,
+                tmp_root=str(tmp_root),
+            )
+            raise JobNotFoundError(message="Файл вне разрешённой директории") from exc
         if not path.exists():
             raise JobNotFoundError(message="Файл удалён или просрочен")
         return path
 
     async def delete_job(self, job_id: str) -> None:
+        # UUID-валидация предотвращает path traversal через job_id вида "../etc".
+        if not _is_valid_job_id(job_id):
+            return
         job = await self._repo.get(job_id)
         if job is None:
             return
         await self._repo.delete(job_id)
-        job_dir = self._tmp_dir / job_id
+        tmp_root = self._tmp_dir.resolve()
+        job_dir = (self._tmp_dir / job_id).resolve()
+        try:
+            job_dir.relative_to(tmp_root)
+        except ValueError:
+            logger.warning("delete_job_dir_outside_tmp", job_id=job_id, job_dir=str(job_dir))
+            return
         if job_dir.exists():
             shutil.rmtree(job_dir, ignore_errors=True)
         logger.info("job_deleted", job_id=job_id)
