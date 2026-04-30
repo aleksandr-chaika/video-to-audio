@@ -208,6 +208,8 @@ class _SourceCardsRow extends StatelessWidget {
             label: 'Gallery',
             icon: Icons.image_outlined,
             iconAsset: 'assets/images/icons/ic_gallery.png',
+            backgroundDecorationAsset:
+                'assets/images/icons/ic_gallery_decoration.png',
             onTap: onGallery,
           ),
         ),
@@ -217,6 +219,8 @@ class _SourceCardsRow extends StatelessWidget {
             label: 'Files',
             icon: Icons.folder_outlined,
             iconAsset: 'assets/images/icons/ic_files.png',
+            backgroundDecorationAsset:
+                'assets/images/icons/ic_files_decoration.png',
             onTap: onFiles,
           ),
         ),

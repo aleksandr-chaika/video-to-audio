@@ -18,6 +18,7 @@ class IconCardButton extends StatelessWidget {
     this.icon,
     this.iconAsset,
     this.chevronAsset = 'assets/images/icons/ic_chevron_right.png',
+    this.backgroundDecorationAsset,
   })  : assert(icon != null || iconAsset != null,
             'Provide icon or iconAsset');
 
@@ -25,6 +26,10 @@ class IconCardButton extends StatelessWidget {
   final IconData? icon;
   final String? iconAsset;
   final String? chevronAsset;
+
+  /// Большая полупрозрачная иконка-декорация в правом верхнем углу card
+  /// (по Figma — копия image/folder icon, как watermark поверх gradient).
+  final String? backgroundDecorationAsset;
   final VoidCallback onTap;
 
   @override
@@ -44,18 +49,29 @@ class IconCardButton extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: <Widget>[
-                Positioned(
-                  top: -120,
-                  right: -120,
-                  child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(0x1AFFFFFF),
+                // Большая полупрозрачная иконка-декорация в правом верхнем
+                // углу card — повторяет основную иконку card (gallery/folder)
+                // как watermark поверх gradient. По Figma на каждой card
+                // есть такой ассет — обязательная декорация.
+                if (backgroundDecorationAsset != null)
+                  Positioned(
+                    top: -16,
+                    right: -32,
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: 0.18,
+                        child: Image.asset(
+                          backgroundDecorationAsset!,
+                          width: 160,
+                          height: 160,
+                          fit: BoxFit.contain,
+                          errorBuilder: (BuildContext c, Object err,
+                                  StackTrace? st) =>
+                              const SizedBox.shrink(),
+                        ),
+                      ),
                     ),
                   ),
-                ),
                 Padding(
                   padding: const EdgeInsets.all(AppDimens.space16),
                   child: Column(
