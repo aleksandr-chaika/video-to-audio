@@ -7,10 +7,13 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimens.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/duration_formatter.dart';
+import '../../../../core/utils/file_utils.dart';
 import '../../../../core/widgets/audio_preview_block.dart';
 import '../../../../core/widgets/format_badge.dart';
 import '../../../../core/widgets/icon_button_circle.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../history/domain/entities/history_item.dart';
+import '../../../history/presentation/bloc/history_bloc.dart';
 import '../bloc/crop_bloc.dart';
 
 /// Image#4 — Crop Audio.
@@ -89,6 +92,23 @@ class _CropPageState extends State<CropPage> {
             child: BlocConsumer<CropBloc, CropState>(
               listener: (BuildContext context, CropState state) {
                 if (state is CropSaved) {
+                  // Сохраняем cropped результат в History — иначе после
+                  // закрытия Result он пропадает из истории.
+                  context.read<HistoryBloc>().add(
+                        HistoryItemAdded(
+                          HistoryItem(
+                            id: null,
+                            sourceType: SourceType.local,
+                            sourceFormat: SourceFormat.wav,
+                            outputFormat: SourceFormat.wav,
+                            filePath: state.outputPath,
+                            durationMs: state.duration.inMilliseconds,
+                            createdAt: DateTime.now(),
+                            title: FileUtils.basenameWithoutExt(
+                                state.outputPath),
+                          ),
+                        ),
+                      );
                   context.go('/result', extra: <String, Object?>{
                     'path': state.outputPath,
                     'durationMs': state.duration.inMilliseconds,
