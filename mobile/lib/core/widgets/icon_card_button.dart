@@ -57,12 +57,12 @@ class IconCardButton extends StatelessWidget {
                 if (backgroundDecorationAsset != null)
                   Positioned(
                     right: -8,
-                    top: -4,
+                    top: 1,
                     width: 86,
                     height: 71,
                     child: IgnorePointer(
                       child: Opacity(
-                        opacity: 0.32,
+                        opacity: 0.20,
                         child: Image.asset(
                           backgroundDecorationAsset!,
                           fit: BoxFit.contain,

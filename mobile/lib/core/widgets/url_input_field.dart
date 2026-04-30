@@ -106,20 +106,25 @@ class _UrlInputFieldState extends State<UrlInputField> {
           // Большая декорация YouTube play-icon — по Image #27 занимает
           // примерно правую треть card и выходит вверх+вправо за границы.
           // Размер увеличен до 200×200, opacity 0.32 — заметный watermark.
+          // YouTube play-decoration: 120×120 повёрнут на -14° (Figma 3:161)
           Positioned(
-            right: 16,
-            top: 8,
-            width: 67,
-            height: 67,
+            right: -8,
+            top: -25,
+            width: 120,
+            height: 120,
             child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.32,
-                child: Image.asset(
-                  'assets/images/yt_play_decoration.png',
-                  fit: BoxFit.contain,
-                  alignment: Alignment.center,
-                  errorBuilder: (BuildContext c, Object err, StackTrace? st) =>
-                      const SizedBox.shrink(),
+              child: Transform.rotate(
+                angle: -14.01 * 3.1415926535 / 180, // -14.01° в радианах
+                child: Opacity(
+                  opacity: 0.32,
+                  child: Image.asset(
+                    'assets/images/yt_play_decoration.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
+                    errorBuilder:
+                        (BuildContext c, Object err, StackTrace? st) =>
+                            const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ),
