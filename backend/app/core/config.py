@@ -1,11 +1,11 @@
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_DEFAULT_HOSTS = (
-    "youtube.com,youtu.be,m.youtube.com,www.youtube.com,music.youtube.com"
-)
+_DEFAULT_HOSTS = "youtube.com,youtu.be,m.youtube.com,www.youtube.com,music.youtube.com"
 
 
 class Settings(BaseSettings):
@@ -25,7 +25,9 @@ class Settings(BaseSettings):
 
     job_ttl_sec: int = 3600
     job_timeout_sec: int = 300
-    tmp_dir: Path = Path("/tmp/mp3craft")
+    # Берём системный tempdir (кроссплатформенно: /tmp на Linux/macOS,
+    # %TEMP% на Windows). В Docker по-прежнему получится /tmp/mp3craft.
+    tmp_dir: Path = Field(default_factory=lambda: Path(tempfile.gettempdir()) / "mp3craft")
 
     rate_limit_create: str = "10/minute"
     rate_limit_status: str = "60/minute"
