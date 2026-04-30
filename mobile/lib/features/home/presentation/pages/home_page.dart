@@ -10,6 +10,7 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/file_utils.dart';
 import '../../../../core/utils/platform_utils.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/icon_button_circle.dart';
 import '../../../../core/widgets/icon_card_button.dart';
 import '../../../../core/widgets/url_input_field.dart';
@@ -107,34 +108,55 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   const SizedBox(height: AppDimens.space12),
-                  _Header(onSettings: () => context.push('/settings')),
+                  // Каждый блок — собственная staggered fade+slide анимация
+                  // на старте: header → hero → cards → input → history.
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 0),
+                    child: _Header(onSettings: () => context.push('/settings')),
+                  ),
                   const SizedBox(height: AppDimens.space12),
-                  const AppLogo(),
+                  const FadeSlideIn(
+                    delay: Duration(milliseconds: 80),
+                    child: AppLogo(),
+                  ),
                   const SizedBox(height: AppDimens.space24),
-                  _SourceCardsRow(
-                    onGallery: _pickFromGallery,
-                    onFiles: _pickFromFiles,
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 160),
+                    child: _SourceCardsRow(
+                      onGallery: _pickFromGallery,
+                      onFiles: _pickFromFiles,
+                    ),
                   ),
                   const SizedBox(height: AppDimens.space16),
-                  UrlInputField(
-                    controller: _urlController,
-                    onSubmit: _submitYoutube,
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 240),
+                    child: UrlInputField(
+                      controller: _urlController,
+                      onSubmit: _submitYoutube,
+                    ),
                   ),
                   const SizedBox(height: AppDimens.space24),
-                  Text('History', style: AppTextStyles.sectionTitle),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 320),
+                    child:
+                        Text('History', style: AppTextStyles.sectionTitle),
+                  ),
                   const SizedBox(height: AppDimens.space14),
-                  _HistorySection(
-                    onTapItem: (HistoryItem item) => context.go(
-                      '/result',
-                      extra: <String, Object?>{
-                        'path': item.filePath,
-                        'durationMs': item.durationMs,
-                        'sourceFormat': item.sourceFormat.name,
-                        'title': item.title,
-                        'thumbnailPath': item.thumbnailPath,
-                      },
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 400),
+                    child: _HistorySection(
+                      onTapItem: (HistoryItem item) => context.go(
+                        '/result',
+                        extra: <String, Object?>{
+                          'path': item.filePath,
+                          'durationMs': item.durationMs,
+                          'sourceFormat': item.sourceFormat.name,
+                          'title': item.title,
+                          'thumbnailPath': item.thumbnailPath,
+                        },
+                      ),
+                      onMore: (HistoryItem item) => _showMore(context, item),
                     ),
-                    onMore: (HistoryItem item) => _showMore(context, item),
                   ),
                   const SizedBox(height: AppDimens.space24),
                 ],

@@ -49,16 +49,16 @@ class IconCardButton extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: <Widget>[
-                // Большая полупрозрачная иконка-декорация — pixel-perfect
-                // по Figma (frame 3:139 / 3:150): 114×114, left:83, top:-23
-                // внутри card 163.5×119. Иконка занимает правую половину
-                // card и слегка торчит вверх и вправо за её границы.
+                // Полупрозрачная иконка-декорация — visible-bbox 85.5×73.65
+                // по Figma (Image #21 selection): уменьшена с 114×114 до
+                // 85×74, расположена в правой нижней четверти card без
+                // торчания вверх. Watermark поверх gradient.
                 if (backgroundDecorationAsset != null)
                   Positioned(
-                    left: 83,
-                    top: -23,
-                    width: 114,
-                    height: 114,
+                    right: 6,
+                    top: 22,
+                    width: 86,
+                    height: 74,
                     child: IgnorePointer(
                       child: Opacity(
                         opacity: 0.22,

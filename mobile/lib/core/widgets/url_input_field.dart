@@ -305,7 +305,7 @@ class _RoundIconButton extends StatelessWidget {
             child: AppIcon(
               assetPath: iconAsset,
               fallback: icon,
-              size: 18,
+              size: 24, // Figma 3:176 lucide:clipboard — 24×24 без circle bg
               color: AppColors.textPrimary,
             ),
           ),
