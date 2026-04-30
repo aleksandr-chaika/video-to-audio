@@ -361,21 +361,20 @@ class _PlayerBarState extends State<_PlayerBar> {
     required Duration position,
     required Duration remaining,
   }) {
-    return Container(
-      height: AppDimens.playerBarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: AppDimens.space16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(AppDimens.radius20),
-        border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
-      ),
+    // Figma layout (Image #18):
+    //  • Слева крупная круглая pause 56×56 (accentSolid@20% bg, accent icon)
+    //  • Справа column: slider сверху, timestamps под ним (00:45 / -2:38)
+    //  • Без внешней плашки/обводки.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppDimens.space4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           GestureDetector(
             onTap: widget.onToggle,
             child: Container(
-              width: AppDimens.playerControlSize,
-              height: AppDimens.playerControlSize,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: AppColors.accentSolid.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
@@ -385,51 +384,65 @@ class _PlayerBarState extends State<_PlayerBar> {
                     ? Icons.pause_rounded
                     : Icons.play_arrow_rounded,
                 color: AppColors.accentSolid,
-                size: 26,
+                size: 28,
               ),
             ),
           ),
-          const SizedBox(width: AppDimens.space12),
-          Text(DurationFormatter.format(position),
-              style: AppTextStyles.duration),
+          const SizedBox(width: AppDimens.space14),
           Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 7),
-                activeTrackColor: AppColors.accentSolid,
-                inactiveTrackColor:
-                    AppColors.accentSolid.withValues(alpha: 0.2),
-                thumbColor: Colors.white,
-                overlayShape: SliderComponentShape.noOverlay,
-              ),
-              child: Slider(
-                value: pos.clamp(0, total),
-                max: total,
-                onChangeStart: (double v) {
-                  setState(() {
-                    _dragging = true;
-                    _dragValue = v;
-                  });
-                },
-                onChanged: (double v) {
-                  // Только локальное обновление — никаких seek во время drag.
-                  setState(() => _dragValue = v);
-                },
-                onChangeEnd: (double v) {
-                  // Финальный seek + сброс drag-стейта.
-                  widget.onSeek(Duration(milliseconds: v.round()));
-                  setState(() {
-                    _dragging = false;
-                    _dragValue = null;
-                  });
-                },
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2.5,
+                    thumbShape:
+                        const RoundSliderThumbShape(enabledThumbRadius: 8),
+                    activeTrackColor: AppColors.accentSolid,
+                    inactiveTrackColor: const Color(0x33FFFFFF),
+                    thumbColor: Colors.white,
+                    overlayShape: SliderComponentShape.noOverlay,
+                    trackShape: const RoundedRectSliderTrackShape(),
+                  ),
+                  child: Slider(
+                    value: pos.clamp(0, total),
+                    max: total,
+                    onChangeStart: (double v) {
+                      setState(() {
+                        _dragging = true;
+                        _dragValue = v;
+                      });
+                    },
+                    onChanged: (double v) {
+                      setState(() => _dragValue = v);
+                    },
+                    onChangeEnd: (double v) {
+                      widget.onSeek(Duration(milliseconds: v.round()));
+                      setState(() {
+                        _dragging = false;
+                        _dragValue = null;
+                      });
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimens.space4,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(DurationFormatter.format(position),
+                          style: AppTextStyles.duration),
+                      Text(DurationFormatter.formatRemaining(-remaining),
+                          style: AppTextStyles.duration),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          Text(DurationFormatter.formatRemaining(-remaining),
-              style: AppTextStyles.duration),
         ],
       ),
     );
