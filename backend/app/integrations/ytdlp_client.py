@@ -70,9 +70,7 @@ class YtDlpClient:
 
         return await asyncio.to_thread(self._extract_sync, url, opts, target_dir)
 
-    def _extract_sync(
-        self, url: str, opts: dict[str, Any], target_dir: Path
-    ) -> YouTubeMetadata:
+    def _extract_sync(self, url: str, opts: dict[str, Any], target_dir: Path) -> YouTubeMetadata:
         try:
             with YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(url, download=True)
@@ -101,17 +99,25 @@ class YtDlpClient:
 
         source_path = Path(source_filename)
         if not source_path.exists():
-            for cand in target_dir.glob("source.*"):
-                source_path = cand
-                break
+            # yt-dlp может вернуть имя без правильного расширения (post-processor),
+            # ищем в job-dir; должен быть ровно один файл, иначе считаем download
+            # неуспешным и не угадываем.
+            candidates = sorted(target_dir.glob("source.*"))
+            if len(candidates) != 1:
+                logger.warning(
+                    "yt_source_file_ambiguous",
+                    job_id=target_dir.name,
+                    found=[c.name for c in candidates],
+                )
+                raise YouTubeUnavailableError(
+                    message="yt-dlp: не удалось определить файл-источник",
+                    code=ErrorCode.EXTRACTION_FAILED.value,
+                )
+            source_path = candidates[0]
 
         return YouTubeMetadata(
             title=str(info.get("title")) if info.get("title") else None,
-            thumbnail_url=(
-                str(info.get("thumbnail")) if info.get("thumbnail") else None
-            ),
-            duration_sec=(
-                int(info.get("duration")) if info.get("duration") is not None else None
-            ),
+            thumbnail_url=(str(info.get("thumbnail")) if info.get("thumbnail") else None),
+            duration_sec=(int(info.get("duration")) if info.get("duration") is not None else None),
             source_path=source_path,
         )
