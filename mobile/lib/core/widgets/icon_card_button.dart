@@ -56,10 +56,10 @@ class IconCardButton extends StatelessWidget {
                 // padding'а внутри SVG/PNG → 170×140.
                 if (backgroundDecorationAsset != null)
                   Positioned(
-                    right: 14,
-                    top: 18,
-                    width: 57,
-                    height: 47,
+                    right: 8,
+                    top: 12,
+                    width: 86,
+                    height: 71,
                     child: IgnorePointer(
                       child: Opacity(
                         opacity: 0.32,
