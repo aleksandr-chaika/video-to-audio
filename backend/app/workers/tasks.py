@@ -5,6 +5,7 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.core.errors import (
+    AppError,
     BotDetectedError,
     ConversionError,
     YouTubeUnavailableError,
@@ -57,7 +58,17 @@ async def extract_audio_task(ctx: dict[str, Any], job_id: str, url: str) -> None
         await _fail(repo, job, code, exc.message)
     except ConversionError as exc:
         await _fail(repo, job, ErrorCode.CONVERSION_FAILED, exc.message)
-    except Exception as exc:
+    except TimeoutError:
+        logger.warning("worker_job_timeout", job_id=job_id)
+        await _fail(repo, job, ErrorCode.TIMEOUT, "Превышено время обработки")
+        raise  # arq должен видеть таймаут, чтобы корректно отметить job
+    except AppError as exc:
+        # любая прочая доменная ошибка — фейлим job и продолжаем worker.
+        logger.warning("worker_app_error", job_id=job_id, code=exc.code)
+        await _fail(repo, job, ErrorCode.EXTRACTION_FAILED, exc.message)
+    except Exception as exc:  # pragma: no cover — defensive last-resort
+        # ВАЖНО: не ловим BaseException — это бы проглотило
+        # asyncio.CancelledError/SystemExit и сломало graceful shutdown воркера.
         logger.exception("worker_unexpected_error", job_id=job_id)
         await _fail(repo, job, ErrorCode.EXTRACTION_FAILED, str(exc))
 
@@ -103,9 +114,7 @@ async def _set_status(
     await repo.save(job)
 
 
-async def _fail(
-    repo: RedisJobRepository, job: Job, code: ErrorCode, message: str
-) -> None:
+async def _fail(repo: RedisJobRepository, job: Job, code: ErrorCode, message: str) -> None:
     job.status = JobStatus.FAILED
     job.error_code = code
     job.error_message = message
