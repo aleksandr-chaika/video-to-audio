@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -73,7 +75,49 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   Future<void> _share() async {
-    await Share.shareXFiles(<XFile>[XFile(widget.payload.filePath)]);
+    final String path = widget.payload.filePath;
+    final File file = File(path);
+    if (!file.existsSync()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Файл не найден на устройстве'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+    // На iPad/large screen iOS требует sharePositionOrigin для popover —
+    // вычисляем bbox кнопки Share, чтобы share sheet не падал silent'ом.
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    final Rect origin = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : const Rect.fromLTWH(0, 0, 1, 1);
+
+    try {
+      final result = await Share.shareXFiles(
+        <XFile>[XFile(path, mimeType: 'audio/wav')],
+        subject: widget.payload.title ?? 'MP3 Craft',
+        sharePositionOrigin: origin,
+      );
+      if (!mounted) return;
+      if (result.status == ShareResultStatus.unavailable) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sharing недоступен на этом устройстве'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Не удалось поделиться: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
   }
 
   void _delete() {
