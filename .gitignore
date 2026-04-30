@@ -69,3 +69,7 @@ mobile/**/*.lock
 # Temp
 /tmp/
 *.tmp
+
+# Claude Code (рабочая среда: skills/agents/state — локально, в репо не нужно)
+.claude/
+CLAUDE.md
