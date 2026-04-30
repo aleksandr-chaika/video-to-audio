@@ -361,12 +361,20 @@ class _PlayerBarState extends State<_PlayerBar> {
     required Duration position,
     required Duration remaining,
   }) {
-    // Figma layout (Image #18):
-    //  • Слева крупная круглая pause 56×56 (accentSolid@20% bg, accent icon)
-    //  • Справа column: slider сверху, timestamps под ним (00:45 / -2:38)
-    //  • Без внешней плашки/обводки.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimens.space4),
+    // Figma layout (Image #18 / #20):
+    //  • Внешний контейнер: тёмная плашка #14191F, radius 20, тонкий бордер.
+    //  • Слева крупная круглая pause 56×56 (accentSolid@20% bg, accent icon).
+    //  • Справа column: slider сверху, timestamps под ним (00:45 / -2:38).
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimens.space12,
+        vertical: AppDimens.space12,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceDark,
+        borderRadius: BorderRadius.circular(AppDimens.radius20),
+        border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
