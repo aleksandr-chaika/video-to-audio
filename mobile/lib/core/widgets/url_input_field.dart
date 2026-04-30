@@ -90,6 +90,7 @@ class _UrlInputFieldState extends State<UrlInputField> {
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: <Widget>[
+          // Декоративный blur-circle в правом верхнем углу.
           Positioned(
             top: -130,
             right: -130,
@@ -99,6 +100,25 @@ class _UrlInputFieldState extends State<UrlInputField> {
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Color(0x14FFFFFF),
+              ),
+            ),
+          ),
+          // Декоративный YouTube play-icon (mdi:youtube из Figma 3:161).
+          // Полупрозрачный белый поверх gradient, opacity ~0.12.
+          Positioned(
+            top: -42,
+            right: -29,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: 0.12,
+                child: Image.asset(
+                  'assets/images/yt_play_decoration.png',
+                  width: 146,
+                  height: 146,
+                  fit: BoxFit.contain,
+                  errorBuilder: (BuildContext c, Object err, StackTrace? st) =>
+                      const SizedBox.shrink(),
+                ),
               ),
             ),
           ),
