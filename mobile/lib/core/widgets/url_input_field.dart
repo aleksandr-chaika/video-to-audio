@@ -5,6 +5,7 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_dimens.dart';
 import '../../app/theme/app_text_styles.dart';
 import '../utils/url_validator.dart';
+import 'app_icon.dart';
 
 /// YouTube URL карточка (Image#1): 343×121, radius 24, gradient.
 /// Внутри сверху — link-иконка + YouTube-логотип.
@@ -145,12 +146,14 @@ class _UrlInputFieldState extends State<UrlInputField> {
                       if (hasText)
                         _RoundIconButton(
                           icon: Icons.close_rounded,
+                          iconAsset: 'assets/images/icons/ic_close.png',
                           onTap: _clear,
                           background: const Color(0x33FFFFFF),
                         )
                       else
                         _RoundIconButton(
                           icon: Icons.content_paste_rounded,
+                          iconAsset: 'assets/images/icons/ic_clipboard.png',
                           onTap: _paste,
                           background: Colors.transparent,
                         ),
@@ -253,8 +256,10 @@ class _RoundIconButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.background,
+    this.iconAsset,
   });
   final IconData icon;
+  final String? iconAsset;
   final VoidCallback onTap;
   final Color background;
 
@@ -269,7 +274,14 @@ class _RoundIconButton extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
-          child: Icon(icon, size: 18, color: AppColors.textPrimary),
+          child: Center(
+            child: AppIcon(
+              assetPath: iconAsset,
+              fallback: icon,
+              size: 18,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
       ),
     );

@@ -20,18 +20,39 @@ type ExportItem = {
 };
 
 const EXPORTS: ExportItem[] = [
-  // Hero composition
+  // ===== 3D иллюстрации =====
   { nodeId: "3:198", out: "hero_logo_3d.png", scale: 3 },
-  // Микрофон отдельно (для empty history)
   { nodeId: "3:218", out: "mic_3d.png", scale: 3 },
-  // Камера (для возможного использования)
   { nodeId: "3:219", out: "camera_3d.png", scale: 3 },
-  // YouTube логотип
   { nodeId: "66:156", out: "youtube_logo.png", scale: 3 },
-  // 3D MP3-документ (внутри hugeicons:mp3-01)
   { nodeId: "10:5643", out: "mp3_doc_3d.png", scale: 3 },
-  // Solar music note (Result preview placeholder)
   { nodeId: "3:1910", out: "music_note_3d.png", scale: 3 },
+
+  // ===== Плоские UI-иконки (из Main Page) =====
+  // Settings gear (header) — material-symbols:settings-rounded 24x24
+  { nodeId: "3:247", out: "icons/ic_settings.png", scale: 4 },
+  // Gallery icon в белом боксе 48x48 (внутри Gallery card)
+  { nodeId: "3:273", out: "icons/ic_gallery.png", scale: 4 },
+  // Files icon в белом боксе 48x48 (внутри Files card)
+  { nodeId: "3:284", out: "icons/ic_files.png", scale: 4 },
+  // Chevron-back (визуально это chevron-right, ориентация задаётся Figma) 20x20
+  { nodeId: "3:270", out: "icons/ic_chevron_right.png", scale: 4 },
+  // Clipboard в URL поле
+  { nodeId: "3:302", out: "icons/ic_clipboard.png", scale: 4 },
+  // Link icon
+  { nodeId: "3:297", out: "icons/ic_link.png", scale: 4 },
+  // More dots (history card)
+  { nodeId: "3:320", out: "icons/ic_more.png", scale: 4 },
+
+  // ===== Иконки из Result/Crop =====
+  // Close (X)
+  { nodeId: "3:1716", out: "icons/ic_close.png", scale: 4 },
+  // Delete
+  { nodeId: "3:1721", out: "icons/ic_delete.png", scale: 4 },
+  // Pause
+  { nodeId: "40:189", out: "icons/ic_pause.png", scale: 4 },
+  // Arrow right (MP3 → WAV)
+  { nodeId: "40:155", out: "icons/ic_arrow_right.png", scale: 4 },
 ];
 
 type WsMessage = {

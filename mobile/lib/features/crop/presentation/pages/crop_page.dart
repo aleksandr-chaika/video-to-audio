@@ -174,7 +174,11 @@ class _CropAppBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppDimens.space16),
         child: Row(
           children: <Widget>[
-            IconButtonCircle(icon: Icons.close_rounded, onPressed: onClose),
+            IconButtonCircle(
+              icon: Icons.close_rounded,
+              iconAsset: 'assets/images/icons/ic_close.png',
+              onPressed: onClose,
+            ),
             Expanded(
               child: Center(
                 child: Text('Result', style: AppTextStyles.appBarTitle),

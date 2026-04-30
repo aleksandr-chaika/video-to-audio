@@ -1,5 +1,4 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -185,7 +184,8 @@ class _Header extends StatelessWidget {
     return Row(
       children: <Widget>[
         IconButtonCircle(
-          icon: CupertinoIcons.settings,
+          icon: Icons.settings_rounded,
+          iconAsset: 'assets/images/icons/ic_settings.png',
           onPressed: onSettings,
         ),
       ],
@@ -207,6 +207,7 @@ class _SourceCardsRow extends StatelessWidget {
           child: IconCardButton(
             label: 'Gallery',
             icon: Icons.image_outlined,
+            iconAsset: 'assets/images/icons/ic_gallery.png',
             onTap: onGallery,
           ),
         ),
@@ -215,6 +216,7 @@ class _SourceCardsRow extends StatelessWidget {
           child: IconCardButton(
             label: 'Files',
             icon: Icons.folder_outlined,
+            iconAsset: 'assets/images/icons/ic_files.png',
             onTap: onFiles,
           ),
         ),

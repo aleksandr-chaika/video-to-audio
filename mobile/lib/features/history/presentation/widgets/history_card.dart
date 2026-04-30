@@ -6,6 +6,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimens.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/utils/duration_formatter.dart';
+import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/widgets/format_badge.dart';
 import '../../domain/entities/history_item.dart';
 
@@ -119,8 +120,14 @@ class _MoreButton extends StatelessWidget {
         child: const SizedBox(
           width: 28,
           height: 28,
-          child: Icon(Icons.more_horiz_rounded,
-              size: 18, color: AppColors.textPrimary),
+          child: Center(
+            child: AppIcon(
+              assetPath: 'assets/images/icons/ic_more.png',
+              fallback: Icons.more_horiz_rounded,
+              size: 18,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
       ),
     );
