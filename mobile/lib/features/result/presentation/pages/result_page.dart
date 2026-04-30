@@ -159,7 +159,10 @@ class _ResultPageState extends State<ResultPage> {
                           placeholderIcon: p.sourceFormat == SourceFormat.mp4
                               ? Icons.videocam_rounded
                               : Icons.music_note_rounded,
-                          height: AppDimens.previewIconOnlyHeight,
+                          height: AppDimens.previewLargeHeight,
+                          showWaveformBackground: true,
+                          noteSize: 190,
+                          playing: _player.playing,
                           bottomOverlay: _PreviewBottomRow(
                             sourceLabel: p.sourceFormat.label,
                             duration: _duration,

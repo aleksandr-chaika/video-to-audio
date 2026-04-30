@@ -55,6 +55,9 @@ class AppDimens {
   static const double playerControlSize = 44; // pause circle
   static const double previewWithImageHeight = 301;
   static const double previewIconOnlyHeight = 175;
+  /// Большой preview для Result-экрана (Figma: ~360 px высотой,
+  /// почти на пол-экрана с крупной 3D-нотой).
+  static const double previewLargeHeight = 360;
   static const double historyCardHeight = 143;
   static const double homeIndicatorWidth = 134;
   static const double homeIndicatorHeight = 5;

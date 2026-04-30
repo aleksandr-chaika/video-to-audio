@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -10,8 +11,8 @@ import '../../app/theme/app_dimens.dart';
 /// 1) если есть `imagePath` (обложка) — Image.file;
 /// 2) иначе — 3D-asset (по умолчанию music note);
 /// 3) [showWaveformBackground]=true рисует горизонтальный waveform на фоне
-///    (под иконкой ноты) — как в Crop-экране Figma.
-class AudioPreviewBlock extends StatelessWidget {
+///    (под иконкой ноты). Если [playing]=true — бары пульсируют синусом.
+class AudioPreviewBlock extends StatefulWidget {
   const AudioPreviewBlock({
     super.key,
     this.imagePath,
@@ -20,6 +21,8 @@ class AudioPreviewBlock extends StatelessWidget {
     this.height = AppDimens.previewIconOnlyHeight,
     this.bottomOverlay,
     this.showWaveformBackground = false,
+    this.noteSize = 150,
+    this.playing = false,
   });
 
   final String? imagePath;
@@ -29,13 +32,53 @@ class AudioPreviewBlock extends StatelessWidget {
   final Widget? bottomOverlay;
   final bool showWaveformBackground;
 
+  /// Размер ноты (или Icon fallback). По умолчанию 150 (Crop), для Result — 190.
+  final double noteSize;
+
+  /// Когда true — waveform-фон оживает, бары пульсируют sin-волной.
+  final bool playing;
+
+  @override
+  State<AudioPreviewBlock> createState() => _AudioPreviewBlockState();
+}
+
+class _AudioPreviewBlockState extends State<AudioPreviewBlock>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.playing) _ctrl.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant AudioPreviewBlock old) {
+    super.didUpdateWidget(old);
+    if (widget.playing && !_ctrl.isAnimating) {
+      _ctrl.repeat();
+    } else if (!widget.playing && _ctrl.isAnimating) {
+      _ctrl.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool hasImage = imagePath != null && File(imagePath!).existsSync();
+    final bool hasImage =
+        widget.imagePath != null && File(widget.imagePath!).existsSync();
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppDimens.radius32),
       child: Container(
-        height: height,
+        height: widget.height,
         width: double.infinity,
         decoration: BoxDecoration(
           color: const Color(0x0DFFFFFF),
@@ -44,39 +87,52 @@ class AudioPreviewBlock extends StatelessWidget {
         ),
         child: Stack(
           children: <Widget>[
-            // Bg waveform (за нотой) — только в Crop screen
-            if (showWaveformBackground && !hasImage)
-              const Positioned.fill(
-                child: _BackgroundWaveform(),
+            // Bg waveform — за нотой
+            if (widget.showWaveformBackground && !hasImage)
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _ctrl,
+                  builder: (BuildContext c, Widget? w) => CustomPaint(
+                    painter: _BgWavePainter(
+                      phase: _ctrl.value,
+                      playing: widget.playing,
+                    ),
+                  ),
+                ),
               ),
             Positioned.fill(
               child: hasImage
-                  ? Image.file(File(imagePath!), fit: BoxFit.cover)
+                  ? Image.file(File(widget.imagePath!), fit: BoxFit.cover)
                   : Center(
-                      child: SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: placeholderAsset != null
-                            ? Image.asset(
-                                placeholderAsset!,
-                                fit: BoxFit.contain,
-                                errorBuilder: (c, o, s) => Icon(
-                                  placeholderIcon,
-                                  size: 122,
+                      child: RepaintBoundary(
+                        child: SizedBox(
+                          width: widget.noteSize,
+                          height: widget.noteSize,
+                          child: widget.placeholderAsset != null
+                              ? Image.asset(
+                                  widget.placeholderAsset!,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (c, o, s) => Icon(
+                                    widget.placeholderIcon,
+                                    size: widget.noteSize * 0.8,
+                                    color: AppColors.accentSolid,
+                                  ),
+                                )
+                              : Icon(
+                                  widget.placeholderIcon,
+                                  size: widget.noteSize * 0.8,
                                   color: AppColors.accentSolid,
                                 ),
-                              )
-                            : Icon(placeholderIcon,
-                                size: 122, color: AppColors.accentSolid),
+                        ),
                       ),
                     ),
             ),
-            if (bottomOverlay != null)
+            if (widget.bottomOverlay != null)
               Positioned(
                 left: AppDimens.space14,
                 right: AppDimens.space14,
                 bottom: AppDimens.space14,
-                child: bottomOverlay!,
+                child: widget.bottomOverlay!,
               ),
           ],
         ),
@@ -85,34 +141,40 @@ class AudioPreviewBlock extends StatelessWidget {
   }
 }
 
-/// Декоративный waveform на фон — тонкие вертикальные палки, центрированные
-/// по высоте контейнера, с псевдо-случайной амплитудой. Цвет — приглушённый
-/// (white @ 0.18), чтобы 3D-нота поверх читалась как главный объект.
-class _BackgroundWaveform extends StatelessWidget {
-  const _BackgroundWaveform();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _BgWavePainter());
-  }
-}
-
+/// Декоративный waveform на фон. При [playing] амплитуда баров модулируется
+/// синусом с фазовым сдвигом по позиции — выглядит как «бегущая» волна.
 class _BgWavePainter extends CustomPainter {
+  _BgWavePainter({required this.phase, required this.playing});
+
+  final double phase; // 0..1
+  final bool playing;
+
+  static const int _bars = 64;
+
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = const Color(0x33FFFFFF)
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
-    const int bars = 64;
-    final double step = size.width / bars;
+    final double step = size.width / _bars;
     final double centerY = size.height / 2;
-    for (int i = 0; i < bars; i++) {
+    for (int i = 0; i < _bars; i++) {
       final double x = i * step + step / 2;
-      // Псевдослучайная высота с акцентом на середину/края (как в Figma)
+      // Базовый псевдослучайный «силуэт» — стабильный от тика к тику.
       final double n1 = ((i * 9 + 13) % 17) / 17.0;
       final double n2 = ((i * 5 + 3) % 11) / 11.0;
-      final double amp = (0.25 + n1 * 0.6 + n2 * 0.4).clamp(0.2, 1.0);
+      final double base = (0.25 + n1 * 0.6 + n2 * 0.4).clamp(0.2, 1.0);
+      final double pulse = playing
+          ? (0.6 +
+              0.4 *
+                  (0.5 +
+                      0.5 *
+                          math.sin(
+                            phase * 2 * math.pi + i * 0.35,
+                          )))
+          : 1.0;
+      final double amp = base * pulse;
       final double h = size.height * 0.35 * amp;
       canvas.drawLine(
         Offset(x, centerY - h / 2),
@@ -123,5 +185,6 @@ class _BgWavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BgWavePainter old) =>
+      old.phase != phase || old.playing != playing;
 }
