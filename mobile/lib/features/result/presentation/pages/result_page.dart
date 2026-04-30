@@ -317,7 +317,7 @@ class _CropAudioButton extends StatelessWidget {
   }
 }
 
-class _PlayerBar extends StatelessWidget {
+class _PlayerBar extends StatefulWidget {
   const _PlayerBar({
     required this.playing,
     required this.position,
@@ -333,11 +333,34 @@ class _PlayerBar extends StatelessWidget {
   final ValueChanged<Duration> onSeek;
 
   @override
+  State<_PlayerBar> createState() => _PlayerBarState();
+}
+
+class _PlayerBarState extends State<_PlayerBar> {
+  /// Локальное значение во время drag; стримовые обновления игнорируются,
+  /// пока пользователь держит палец на ползунке. После отпускания — один seek.
+  double? _dragValue;
+  bool _dragging = false;
+
+  @override
   Widget build(BuildContext context) {
     final double total =
-        duration.inMilliseconds.clamp(1, 1 << 31).toDouble();
-    final double pos = position.inMilliseconds.clamp(0, total).toDouble();
-    final Duration remaining = duration - position;
+        widget.duration.inMilliseconds.clamp(1, 1 << 31).toDouble();
+    final double streamPos =
+        widget.position.inMilliseconds.clamp(0, total).toDouble();
+    final double pos = _dragging ? (_dragValue ?? streamPos) : streamPos;
+    final Duration displayed = Duration(milliseconds: pos.round());
+    final Duration remaining = widget.duration - displayed;
+    return _buildBody(context, total: total, pos: pos, position: displayed, remaining: remaining);
+  }
+
+  Widget _buildBody(
+    BuildContext context, {
+    required double total,
+    required double pos,
+    required Duration position,
+    required Duration remaining,
+  }) {
     return Container(
       height: AppDimens.playerBarHeight,
       padding: const EdgeInsets.symmetric(horizontal: AppDimens.space16),
@@ -349,7 +372,7 @@ class _PlayerBar extends StatelessWidget {
       child: Row(
         children: <Widget>[
           GestureDetector(
-            onTap: onToggle,
+            onTap: widget.onToggle,
             child: Container(
               width: AppDimens.playerControlSize,
               height: AppDimens.playerControlSize,
@@ -358,7 +381,9 @@ class _PlayerBar extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                widget.playing
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
                 color: AppColors.accentSolid,
                 size: 26,
               ),
@@ -380,10 +405,26 @@ class _PlayerBar extends StatelessWidget {
                 overlayShape: SliderComponentShape.noOverlay,
               ),
               child: Slider(
-                value: pos,
+                value: pos.clamp(0, total),
                 max: total,
-                onChanged: (double v) =>
-                    onSeek(Duration(milliseconds: v.toInt())),
+                onChangeStart: (double v) {
+                  setState(() {
+                    _dragging = true;
+                    _dragValue = v;
+                  });
+                },
+                onChanged: (double v) {
+                  // Только локальное обновление — никаких seek во время drag.
+                  setState(() => _dragValue = v);
+                },
+                onChangeEnd: (double v) {
+                  // Финальный seek + сброс drag-стейта.
+                  widget.onSeek(Duration(milliseconds: v.round()));
+                  setState(() {
+                    _dragging = false;
+                    _dragValue = null;
+                  });
+                },
               ),
             ),
           ),
