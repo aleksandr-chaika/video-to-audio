@@ -5,9 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimens.dart';
 
-/// Empty history state — Image#10 reference (Figma).
-/// Rounded square 110×110 radius 24 #14191F с 3D-микрофоном по центру и
-/// тонкими waveform-барами по сторонам, выходящими за пределы card.
+/// Empty history state — Image#13 reference (Figma).
+/// Rounded square 110×110 radius 24 #14191F.
+/// Внутри card сверху — тонкая waveform-полоса, ниже — синий микрофон.
 class HistoryEmptyView extends StatelessWidget {
   const HistoryEmptyView({super.key});
 
@@ -17,44 +17,48 @@ class HistoryEmptyView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppDimens.space24),
       child: Column(
         children: <Widget>[
-          SizedBox(
-            width: double.infinity,
-            height: 130,
+          // Card 110×110 с waveform сверху и mic-icon снизу.
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceCard,
+              borderRadius: BorderRadius.circular(AppDimens.radius24),
+            ),
             child: Stack(
-              alignment: Alignment.center,
               children: <Widget>[
-                // Waveform-бары по горизонтали (220 wide), центральные
-                // скрыты — там card+mic.
-                SizedBox(
-                  width: 220,
-                  height: 60,
+                // Waveform-полоса в верхней четверти card.
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  top: 14,
+                  height: 18,
                   child: CustomPaint(painter: _MicWavePainter()),
                 ),
-                // Dark rounded square 110×110, radius 24
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceCard,
-                    borderRadius: BorderRadius.circular(AppDimens.radius24),
+                // Mic-icon — занимает нижние ~3/4 card.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 6,
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/mic_3d.png',
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.contain,
+                      errorBuilder:
+                          (BuildContext c, Object err, StackTrace? st) {
+                        if (kDebugMode) {
+                          debugPrint('mic_3d.png load failed: $err');
+                        }
+                        return const Icon(
+                          Icons.mic_rounded,
+                          size: 56,
+                          color: AppColors.accentSolid,
+                        );
+                      },
+                    ),
                   ),
-                ),
-                // 3D-микрофон поверх card.
-                Image.asset(
-                  'assets/images/mic_3d.png',
-                  width: 90,
-                  height: 90,
-                  fit: BoxFit.contain,
-                  errorBuilder: (BuildContext c, Object err, StackTrace? st) {
-                    if (kDebugMode) {
-                      debugPrint('mic_3d.png load failed: $err');
-                    }
-                    return const Icon(
-                      Icons.mic_rounded,
-                      size: 64,
-                      color: AppColors.accentSolid,
-                    );
-                  },
                 ),
               ],
             ),
@@ -86,28 +90,26 @@ class HistoryEmptyView extends StatelessWidget {
   }
 }
 
-/// Тонкие audio-bars 220×60: центральные ~10 баров скрыты (там card+mic),
-/// крайние видны слева и справа от тёмной card как audio-визуализация.
+/// Тонкая audio-визуализация — горизонтальные бары переменной высоты,
+/// рисуются по всей ширине canvas. Симулирует пик-уровни записи.
 class _MicWavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = AppColors.accentSolid.withValues(alpha: 0.45)
-      ..strokeWidth = 2.5
+      ..color = AppColors.accentSolid.withValues(alpha: 0.55)
+      ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
 
-    final double centerY = size.height / 2;
-    const int bars = 26;
+    const int bars = 32;
     final double step = size.width / bars;
-    const int hideFrom = 8;
-    const int hideTo = 17;
+    final double centerY = size.height / 2;
     for (int i = 0; i < bars; i++) {
-      if (i >= hideFrom && i <= hideTo) continue;
       final double x = i * step + step / 2;
-      final double normalized = (i / bars - 0.5).abs();
-      final double pseudo = ((i * 7 + 3) % 5) / 5.0;
-      final double h =
-          (1 - normalized) * size.height * 0.8 * (0.4 + pseudo * 0.6) + 4;
+      // Псевдо-случайная амплитуда (стабильная между рендерами).
+      final double n1 = ((i * 11 + 3) % 17) / 17.0;
+      final double n2 = ((i * 7 + 5) % 13) / 13.0;
+      final double amp = (0.25 + n1 * 0.55 + n2 * 0.4).clamp(0.15, 1.0);
+      final double h = size.height * amp;
       canvas.drawLine(
         Offset(x, centerY - h / 2),
         Offset(x, centerY + h / 2),

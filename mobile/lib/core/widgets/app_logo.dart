@@ -26,13 +26,14 @@ class AppLogo extends StatelessWidget {
         clipBehavior: Clip.none,
         children: <Widget>[
           // 3D-композиция: верхне-правый угол; top:-58 поднимает её на
-          // уровень header (settings icon), не залезая на текст слева.
+          // уровень header (settings icon), небольшой right offset чтобы
+          // 3D не выходил далеко за экран.
           Positioned(
-            right: -30,
+            right: 0,
             top: -58,
             child: IgnorePointer(
               child: SizedBox(
-                width: 200,
+                width: 210,
                 height: 175,
                 child: Image.asset(
                   heroAssetPath,
