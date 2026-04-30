@@ -28,11 +28,11 @@ class AppLogo extends StatelessWidget {
           // 3D-композиция: верхне-правый угол; top:-58 поднимает её на
           // уровень header (settings icon), не залезая на текст слева.
           Positioned(
-            right: -24,
+            right: -30,
             top: -58,
             child: IgnorePointer(
               child: SizedBox(
-                width: 220,
+                width: 200,
                 height: 175,
                 child: Image.asset(
                   heroAssetPath,
@@ -43,13 +43,14 @@ class AppLogo extends StatelessWidget {
               ),
             ),
           ),
-          // Текст слева, ограниченный по ширине (220px) — не подходит под
-          // 3D-блок справа.
+          // Текст слева, ограниченный по ширине (240px) — это ширина из
+          // Figma (303px) минус safe-margin до 3D-блока. Хватает на
+          // «crystal-clear MP3s in second» в одной строке.
           Positioned(
             left: 0,
             top: 24,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
+              constraints: const BoxConstraints(maxWidth: 240),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
