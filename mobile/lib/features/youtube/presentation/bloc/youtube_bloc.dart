@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,8 +28,6 @@ class YoutubeBloc extends Bloc<YoutubeEvent, YoutubeState> {
   final CreateYoutubeJobUseCase _createJob;
   final PollYoutubeJobUseCase _pollJob;
   final DownloadYoutubeFileUseCase _downloadFile;
-
-  StreamSubscription<Either<Failure, YtJob>>? _pollSub;
 
   Future<void> _onExtract(
       YoutubeExtractRequested event, Emitter<YoutubeState> emit) async {
@@ -92,9 +88,4 @@ class YoutubeBloc extends Bloc<YoutubeEvent, YoutubeState> {
     );
   }
 
-  @override
-  Future<void> close() {
-    _pollSub?.cancel();
-    return super.close();
-  }
 }
