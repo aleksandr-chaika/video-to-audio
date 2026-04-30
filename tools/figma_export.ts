@@ -21,7 +21,9 @@ type ExportItem = {
 
 const EXPORTS: ExportItem[] = [
   // ===== 3D иллюстрации =====
-  { nodeId: "3:198", out: "hero_logo_3d.png", scale: 3 },
+  // 3:199 BG — только 3D-композиция (mic+camera+refresh+sparkles), БЕЗ текста "Craft".
+  // Раньше тут был 3:198 — он содержал и текст, что приводило к двойной отрисовке.
+  { nodeId: "3:199", out: "hero_logo_3d.png", scale: 3 },
   { nodeId: "3:218", out: "mic_3d.png", scale: 3 },
   { nodeId: "3:219", out: "camera_3d.png", scale: 3 },
   { nodeId: "66:156", out: "youtube_logo.png", scale: 3 },

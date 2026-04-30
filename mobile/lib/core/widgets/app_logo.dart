@@ -5,8 +5,7 @@ import '../../app/theme/app_dimens.dart';
 import '../../app/theme/app_text_styles.dart';
 
 /// Hero-блок Main Page (Image#1).
-/// Использует `assets/images/hero_logo_3d.png` (экспортирован из Figma)
-/// + текстовый блок "Craft" + подзаголовок слева.
+/// 162h. Слева — текст «Craft» + субтитл, справа — 3D-композиция.
 class AppLogo extends StatelessWidget {
   const AppLogo({
     super.key,
@@ -18,17 +17,17 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 152,
+      height: 162,
       child: Stack(
         clipBehavior: Clip.none,
         children: <Widget>[
-          // 3D-композиция справа, на всю высоту блока, с лёгким overflow
+          // 3D-композиция справа.
           Positioned(
-            top: -10,
-            right: -8,
-            bottom: 0,
-            child: AspectRatio(
-              aspectRatio: 1125 / 627,
+            right: -16,
+            top: -8,
+            child: SizedBox(
+              width: 200,
+              height: 162,
               child: Image.asset(
                 heroAssetPath,
                 fit: BoxFit.contain,
@@ -37,7 +36,7 @@ class AppLogo extends StatelessWidget {
               ),
             ),
           ),
-          // Текстовый блок слева
+          // Текст слева, не перекрывает 3D (text width ~210, image starts at right-200)
           Positioned(
             left: 0,
             top: 24,
@@ -75,7 +74,6 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-/// Fallback (если ассет недоступен).
 class _HeroFallback extends StatelessWidget {
   const _HeroFallback();
 
