@@ -49,21 +49,21 @@ class IconCardButton extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: <Widget>[
-                // Большая полупрозрачная иконка-декорация в правом верхнем
-                // углу card — повторяет основную иконку card (gallery/folder)
-                // как watermark поверх gradient. По Figma на каждой card
-                // есть такой ассет — обязательная декорация.
+                // Большая полупрозрачная иконка-декорация — pixel-perfect
+                // по Figma (frame 3:139 / 3:150): 114×114, left:83, top:-23
+                // внутри card 163.5×119. Иконка занимает правую половину
+                // card и слегка торчит вверх и вправо за её границы.
                 if (backgroundDecorationAsset != null)
                   Positioned(
-                    top: -16,
-                    right: -32,
+                    left: 83,
+                    top: -23,
+                    width: 114,
+                    height: 114,
                     child: IgnorePointer(
                       child: Opacity(
-                        opacity: 0.18,
+                        opacity: 0.22,
                         child: Image.asset(
                           backgroundDecorationAsset!,
-                          width: 160,
-                          height: 160,
                           fit: BoxFit.contain,
                           errorBuilder: (BuildContext c, Object err,
                                   StackTrace? st) =>
