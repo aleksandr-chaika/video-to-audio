@@ -43,6 +43,13 @@ class AppColors {
   static const Color textMuted = Color(0x4DFFFFFF); // 30%
   static const Color textFaded = Color(0x40FFFFFF); // 25%
 
+  // Surface overlays (полупрозрачный белый поверх тёмного фона).
+  // Используются для бордеров, заполнений pill'ов, slider track'ов.
+  static const Color surfaceOverlay05 = Color(0x0DFFFFFF); // ~5%
+  static const Color surfaceOverlay10 = Color(0x1AFFFFFF); // ~10%
+  static const Color surfaceOverlay20 = Color(0x33FFFFFF); // ~20%
+  static const Color surfaceOverlay25 = Color(0x40FFFFFF); // ~25%
+
   // Status / utility
   static const Color danger = Color(0xFFF42727);
   static const Color youtubeRed = Color(0xFFFF0000);

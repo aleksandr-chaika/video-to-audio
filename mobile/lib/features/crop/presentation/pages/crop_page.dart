@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -32,6 +34,7 @@ class CropPage extends StatefulWidget {
 
 class _CropPageState extends State<CropPage> {
   late final AudioPlayer _player;
+  final List<StreamSubscription<Object?>> _subs = <StreamSubscription<Object?>>[];
   bool _playing = false;
 
   @override
@@ -46,14 +49,17 @@ class _CropPageState extends State<CropPage> {
           .read<CropBloc>()
           .add(CropLoaded(sourcePath: widget.sourcePath, total: total));
     });
-    _player.playerStateStream.listen((PlayerState s) {
+    _subs.add(_player.playerStateStream.listen((PlayerState s) {
       if (!mounted) return;
       setState(() => _playing = s.playing);
-    });
+    }));
   }
 
   @override
   void dispose() {
+    for (final StreamSubscription<Object?> s in _subs) {
+      s.cancel();
+    }
     _player.dispose();
     super.dispose();
   }
@@ -69,11 +75,11 @@ class _CropPageState extends State<CropPage> {
       body: Stack(
         children: <Widget>[
           Positioned(
-            left: -232,
-            top: -617,
+            left: AppDimens.ambientEllipseLeft,
+            top: AppDimens.ambientEllipseTop,
             child: Container(
-              width: 839,
-              height: 839,
+              width: AppDimens.ambientEllipseSize,
+              height: AppDimens.ambientEllipseSize,
               decoration: const BoxDecoration(
                 gradient: RadialGradient(
                   colors: <Color>[
@@ -263,7 +269,7 @@ class _PreviewBottomRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: const Color(0x1AFFFFFF),
+            color: AppColors.surfaceOverlay10,
             borderRadius: BorderRadius.circular(AppDimens.radius16),
           ),
           child: Text(
@@ -350,7 +356,7 @@ class _Trimmer extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.surfaceDark,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
+                border: Border.all(color: AppColors.surfaceOverlay05, width: 1),
               ),
               child: Center(
                 child: Icon(
@@ -432,7 +438,7 @@ class _TrimmerTrack extends StatelessWidget {
             child: CustomPaint(
               painter: _WaveformPainter(
                 bars: _bars,
-                color: const Color(0x40FFFFFF),
+                color: AppColors.surfaceOverlay25,
               ),
             ),
           ),

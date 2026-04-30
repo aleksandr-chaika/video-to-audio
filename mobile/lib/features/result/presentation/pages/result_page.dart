@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ class ResultPage extends StatefulWidget {
 
 class _ResultPageState extends State<ResultPage> {
   late final AudioPlayer _player;
+  final List<StreamSubscription<Object?>> _subs = <StreamSubscription<Object?>>[];
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
@@ -48,11 +50,11 @@ class _ResultPageState extends State<ResultPage> {
               ? widget.payload.duration
               : Duration.zero);
     });
-    _player.positionStream.listen((Duration p) {
+    _subs.add(_player.positionStream.listen((Duration p) {
       if (!mounted) return;
       setState(() => _position = p);
-    });
-    _player.playerStateStream.listen((PlayerState s) {
+    }));
+    _subs.add(_player.playerStateStream.listen((PlayerState s) {
       if (!mounted) return;
       if (s.processingState == ProcessingState.completed) {
         _player
@@ -61,11 +63,14 @@ class _ResultPageState extends State<ResultPage> {
       } else {
         setState(() {});
       }
-    });
+    }));
   }
 
   @override
   void dispose() {
+    for (final StreamSubscription<Object?> s in _subs) {
+      s.cancel();
+    }
     _player.dispose();
     super.dispose();
   }
@@ -168,11 +173,11 @@ class _ResultPageState extends State<ResultPage> {
         children: <Widget>[
           // Ambient blue ellipse top
           Positioned(
-            left: -232,
-            top: -617,
+            left: AppDimens.ambientEllipseLeft,
+            top: AppDimens.ambientEllipseTop,
             child: Container(
-              width: 839,
-              height: 839,
+              width: AppDimens.ambientEllipseSize,
+              height: AppDimens.ambientEllipseSize,
               decoration: const BoxDecoration(
                 gradient: RadialGradient(
                   colors: <Color>[
@@ -310,7 +315,7 @@ class _PreviewBottomRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: const Color(0x1AFFFFFF),
+            color: AppColors.surfaceOverlay10,
             borderRadius: BorderRadius.circular(AppDimens.radius16),
           ),
           child: Text(
@@ -420,7 +425,7 @@ class _PlayerBarState extends State<_PlayerBar> {
       decoration: BoxDecoration(
         color: AppColors.surfaceDark,
         borderRadius: BorderRadius.circular(AppDimens.radius20),
-        border: Border.all(color: const Color(0x0DFFFFFF), width: 1),
+        border: Border.all(color: AppColors.surfaceOverlay05, width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -455,7 +460,7 @@ class _PlayerBarState extends State<_PlayerBar> {
                     thumbShape:
                         const RoundSliderThumbShape(enabledThumbRadius: 8),
                     activeTrackColor: AppColors.accentSolid,
-                    inactiveTrackColor: const Color(0x33FFFFFF),
+                    inactiveTrackColor: AppColors.surfaceOverlay20,
                     thumbColor: Colors.white,
                     overlayShape: SliderComponentShape.noOverlay,
                     trackShape: const RoundedRectSliderTrackShape(),

@@ -74,4 +74,11 @@ class AppDimens {
   // Breakpoints
   static const double tabletBreakpoint = 600;
   static const double desktopBreakpoint = 1024;
+
+  // Ambient ellipse — большой синий радиальный градиент сверху-слева на
+  // Result/Crop экранах. Координаты задают сдвиг центра относительно top-left
+  // экрана (Figma 375×812 reference).
+  static const double ambientEllipseSize = 839;
+  static const double ambientEllipseLeft = -232;
+  static const double ambientEllipseTop = -617;
 }
