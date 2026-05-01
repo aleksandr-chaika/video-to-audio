@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/file_utils.dart';
+import '../../../../core/utils/thumbnail_helper.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../history/domain/entities/history_item.dart';
 import '../../../history/presentation/bloc/history_bloc.dart';
@@ -31,29 +32,7 @@ class _ProcessingPageState extends State<ProcessingPage> {
       listener: (BuildContext context, ConvertState state) {
         switch (state) {
           case ConvertDone():
-            final SourceFormat src = SourceFormatX.fromString(
-                FileUtils.extensionOf(state.sourcePath));
-            context.read<HistoryBloc>().add(
-                  HistoryItemAdded(
-                    HistoryItem(
-                      id: null,
-                      sourceType: SourceType.local,
-                      sourceFormat: src,
-                      outputFormat: SourceFormat.wav,
-                      filePath: state.wavPath,
-                      durationMs: state.durationMs,
-                      createdAt: DateTime.now(),
-                      title:
-                          FileUtils.basenameWithoutExt(state.sourcePath),
-                    ),
-                  ),
-                );
-            context.go('/result', extra: <String, Object?>{
-              'path': state.wavPath,
-              'durationMs': state.durationMs,
-              'sourceFormat': src.name,
-              'title': FileUtils.basenameWithoutExt(state.sourcePath),
-            });
+            _handleDone(context, state);
           case ConvertFailure(:final String message):
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -71,5 +50,44 @@ class _ProcessingPageState extends State<ProcessingPage> {
         body: SafeArea(child: LoadingOverlay()),
       ),
     );
+  }
+
+  /// Обработка успешной конвертации: извлекаем превью-кадр из исходного
+  /// видео (для MP4/MOV), сохраняем в History, переходим к Result.
+  Future<void> _handleDone(BuildContext context, ConvertDone state) async {
+    final SourceFormat src = SourceFormatX.fromString(
+        FileUtils.extensionOf(state.sourcePath));
+    final String title = FileUtils.basenameWithoutExt(state.sourcePath);
+
+    // Извлекаем preview только для видео-форматов (MP4/MOV).
+    String? thumbnailPath;
+    if (FileUtils.isVideo(state.sourcePath)) {
+      thumbnailPath =
+          await ThumbnailHelper.extractFromVideo(state.sourcePath);
+    }
+    if (!context.mounted) return;
+
+    context.read<HistoryBloc>().add(
+          HistoryItemAdded(
+            HistoryItem(
+              id: null,
+              sourceType: SourceType.local,
+              sourceFormat: src,
+              outputFormat: SourceFormat.wav,
+              filePath: state.wavPath,
+              durationMs: state.durationMs,
+              createdAt: DateTime.now(),
+              title: title,
+              thumbnailPath: thumbnailPath,
+            ),
+          ),
+        );
+    context.go('/result', extra: <String, Object?>{
+      'path': state.wavPath,
+      'durationMs': state.durationMs,
+      'sourceFormat': src.name,
+      'title': title,
+      'thumbnailPath': thumbnailPath,
+    });
   }
 }
