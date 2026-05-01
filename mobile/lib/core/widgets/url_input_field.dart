@@ -31,6 +31,7 @@ class UrlInputField extends StatefulWidget {
 class _UrlInputFieldState extends State<UrlInputField> {
   bool _isValid = false;
   bool _focused = false;
+  String? _clipboardSuggestion; // URL из буфера, готовый к вставке
   late final FocusNode _focusNode = FocusNode()..addListener(_onFocus);
 
   @override
@@ -38,10 +39,6 @@ class _UrlInputFieldState extends State<UrlInputField> {
     super.initState();
     widget.controller.addListener(_onChange);
     _isValid = YouTubeUrlValidator.isValid(widget.controller.text);
-    // После первого build проверяем clipboard и предлагаем вставку.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _maybeSuggestClipboard();
-    });
   }
 
   @override
@@ -55,57 +52,47 @@ class _UrlInputFieldState extends State<UrlInputField> {
   void _onChange() {
     final bool nv = YouTubeUrlValidator.isValid(widget.controller.text);
     if (nv != _isValid) setState(() => _isValid = nv);
+    // Текст изменился — скрыть chip suggestion (пользователь уже что-то ввёл).
+    if (widget.controller.text.isNotEmpty && _clipboardSuggestion != null) {
+      setState(() => _clipboardSuggestion = null);
+    }
   }
 
   void _onFocus() {
     if (_focused != _focusNode.hasFocus) {
       setState(() => _focused = _focusNode.hasFocus);
+      if (_focusNode.hasFocus) {
+        _checkClipboardForSuggestion();
+      } else {
+        // При unfocus — скрыть chip
+        setState(() => _clipboardSuggestion = null);
+      }
     }
   }
 
-  /// Если в буфере обмена YouTube-ссылка и поле пустое — показать
-  /// SnackBar с предложением её вставить.
-  Future<void> _maybeSuggestClipboard() async {
-    if (!mounted) return;
+  /// Проверяем clipboard при focus → если там валидный YouTube URL и
+  /// поле пустое, показываем inline chip «Paste link» над input.
+  Future<void> _checkClipboardForSuggestion() async {
     if (widget.controller.text.isNotEmpty) return;
     final ClipboardData? d = await Clipboard.getData('text/plain');
     final String? text = d?.text?.trim();
-    if (text == null || text.isEmpty) return;
-    if (!YouTubeUrlValidator.isValid(text)) return;
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.surfaceCard,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(AppDimens.space16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radius16),
-        ),
-        duration: const Duration(seconds: 6),
-        content: Row(
-          children: <Widget>[
-            const Icon(Icons.link_rounded, color: AppColors.accentSolid),
-            const SizedBox(width: AppDimens.space8),
-            const Expanded(
-              child: Text(
-                'YouTube ссылка в буфере',
-                style: TextStyle(color: AppColors.textPrimary),
-              ),
-            ),
-          ],
-        ),
-        action: SnackBarAction(
-          label: 'Вставить',
-          textColor: AppColors.accentSolid,
-          onPressed: () {
-            widget.controller.text = text;
-            widget.controller.selection = TextSelection.fromPosition(
-              TextPosition(offset: text.length),
-            );
-          },
-        ),
-      ),
+    if (text == null ||
+        text.isEmpty ||
+        !YouTubeUrlValidator.isValid(text)) {
+      return;
+    }
+    setState(() => _clipboardSuggestion = text);
+  }
+
+  void _acceptSuggestion() {
+    final String? text = _clipboardSuggestion;
+    if (text == null) return;
+    widget.controller.text = text;
+    widget.controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: text.length),
     );
+    setState(() => _clipboardSuggestion = null);
   }
 
   Future<void> _paste() async {
@@ -199,7 +186,39 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const _YouTubeHeader(),
+                  // Header сжимается до Row(link + YouTube logo + Spacer + chip)
+                  // — chip с предложением вставки появляется справа в шапке
+                  // когда есть фокус и в буфере YouTube URL.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      const _YouTubeHeader(),
+                      const Spacer(),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        transitionBuilder:
+                            (Widget child, Animation<double> a) {
+                          return FadeTransition(
+                            opacity: a,
+                            child: SizeTransition(
+                              sizeFactor: a,
+                              axis: Axis.horizontal,
+                              axisAlignment: 1.0,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _clipboardSuggestion != null
+                            ? _PasteSuggestionChip(
+                                key: const ValueKey<String>('paste-chip'),
+                                onTap: _acceptSuggestion,
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey<String>('no-chip'),
+                              ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: AppDimens.space12),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -372,6 +391,56 @@ class _YouTubeWordmarkFallback extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Inline-предложение вставки из буфера обмена. Появляется справа в
+/// шапке YouTube-card, когда поле ввода в фокусе и в clipboard
+/// валидный YouTube URL. Tap → вставка в input.
+class _PasteSuggestionChip extends StatelessWidget {
+  const _PasteSuggestionChip({required this.onTap, super.key});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimens.space12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0x33FFFFFF), // white@20%
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: const Color(0x4DFFFFFF),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const <Widget>[
+              Icon(Icons.content_paste_rounded,
+                  size: 14, color: AppColors.textPrimary),
+              SizedBox(width: 6),
+              Text(
+                'Вставить',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -80,8 +80,13 @@ class _HomePageState extends State<HomePage> {
     final double horizontal = PlatformUtils.horizontalPadding(context);
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: <Widget>[
+      // Tap по любой пустой области — закрывает клавиатуру.
+      // HitTestBehavior.opaque чтобы tap ловился даже в пустой Stack-зоне.
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Stack(
+          children: <Widget>[
           // Декоративный синий эллипс — едва виден из-под верхнего края
           Positioned(
             left: -232,
@@ -164,7 +169,8 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
