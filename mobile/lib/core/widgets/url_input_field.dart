@@ -9,10 +9,9 @@ import '../../gen/assets.gen.dart';
 import '../utils/url_validator.dart';
 import 'app_icon.dart';
 
-/// YouTube URL карточка (Image#1): 343×121, radius 24, gradient.
-/// Внутри сверху — link-иконка + YouTube-логотип.
-/// Внизу — input-pill 307×48, radius 16, white@15%:
-///   left link-icon, placeholder "Paste your link", right paste/clear/check-circle.
+/// YouTube URL карточка (Figma 3:160): 343×121, radius 24, gradient
+/// + decoration play-icon, + tonkий stroke white@15% 3px inside.
+/// Внутри: header (link + YouTube logo) + Row(input pill + check-button OUTSIDE pill).
 class UrlInputField extends StatefulWidget {
   const UrlInputField({
     required this.controller,
@@ -39,6 +38,10 @@ class _UrlInputFieldState extends State<UrlInputField> {
     super.initState();
     widget.controller.addListener(_onChange);
     _isValid = YouTubeUrlValidator.isValid(widget.controller.text);
+    // После первого build проверяем clipboard и предлагаем вставку.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeSuggestClipboard();
+    });
   }
 
   @override
@@ -60,6 +63,51 @@ class _UrlInputFieldState extends State<UrlInputField> {
     }
   }
 
+  /// Если в буфере обмена YouTube-ссылка и поле пустое — показать
+  /// SnackBar с предложением её вставить.
+  Future<void> _maybeSuggestClipboard() async {
+    if (!mounted) return;
+    if (widget.controller.text.isNotEmpty) return;
+    final ClipboardData? d = await Clipboard.getData('text/plain');
+    final String? text = d?.text?.trim();
+    if (text == null || text.isEmpty) return;
+    if (!YouTubeUrlValidator.isValid(text)) return;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.surfaceCard,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(AppDimens.space16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radius16),
+        ),
+        duration: const Duration(seconds: 6),
+        content: Row(
+          children: <Widget>[
+            const Icon(Icons.link_rounded, color: AppColors.accentSolid),
+            const SizedBox(width: AppDimens.space8),
+            const Expanded(
+              child: Text(
+                'YouTube ссылка в буфере',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
+            ),
+          ],
+        ),
+        action: SnackBarAction(
+          label: 'Вставить',
+          textColor: AppColors.accentSolid,
+          onPressed: () {
+            widget.controller.text = text;
+            widget.controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: text.length),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _paste() async {
     final ClipboardData? d = await Clipboard.getData('text/plain');
     if (d?.text == null) return;
@@ -73,13 +121,18 @@ class _UrlInputFieldState extends State<UrlInputField> {
     _focusNode.requestFocus();
   }
 
+  /// Submit только если URL валиден. Иначе — просто скрываем клавиатуру.
+  void _handleSubmit(String value) {
+    if (YouTubeUrlValidator.isValid(value)) {
+      widget.onSubmit(value);
+    } else {
+      _focusNode.unfocus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasText = widget.controller.text.isNotEmpty;
-    // Структура: ClipRRect → Stack(gradient bg → decoration → padded content).
-    // Stack сам управляет clip и расположением, декорация позиционируется
-    // относительно ВНЕШНИХ границ card (а не padded child-зоны), и поэтому
-    // top:-42 действительно прижимает её к верху card по Figma.
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppDimens.radius24),
       child: SizedBox(
@@ -95,9 +148,24 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 ),
               ),
             ),
-            // YouTube play-decoration — pixel-perfect по Figma 3:161:
-            // X:226 Y:-42 W:120.97 H:120.97 ∠-14.01° opacity 7%.
-            // Координаты от внешней границы card (без padding).
+            // Stroke (Figma: linear white→transparent, 15% opacity, 3px inside).
+            // Реализован как тонкая накладка — DecoratedBox с border на stroke
+            // gradient + clip RRect (внешний ClipRRect уже обрезает по radius).
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppDimens.radius24),
+                    border: Border.all(
+                      color: const Color(0x26FFFFFF), // white@15%
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // YouTube play-decoration — Figma 3:161: X:226 Y:-42 W:120.97
+            // ∠-14.01° opacity 7%.
             Positioned(
               right: -4,
               top: -42,
@@ -119,7 +187,7 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 ),
               ),
             ),
-            // Основной padded-контент: header + input pill.
+            // Основной padded-контент.
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppDimens.space16,
@@ -133,76 +201,101 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 children: <Widget>[
                   const _YouTubeHeader(),
                   const SizedBox(height: AppDimens.space12),
-                  SizedBox(
-                    height: 48,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0x26FFFFFF), // 15%
-                    borderRadius: BorderRadius.circular(AppDimens.radius16),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimens.space14,
-                  ),
-                  child: Row(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
-                      const Icon(Icons.link_rounded,
-                          size: 20, color: AppColors.textPrimary),
-                      const SizedBox(width: AppDimens.space8),
+                      // Input pill сам по себе (Figma — 261×48 если есть check,
+                      // иначе занимает всю ширину).
                       Expanded(
-                        child: TextField(
-                          controller: widget.controller,
-                          focusNode: _focusNode,
-                          keyboardType: TextInputType.url,
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: widget.onSubmit,
-                          style: AppTextStyles.body,
-                          cursorColor: AppColors.textPrimary,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            border: InputBorder.none,
-                            hintText: widget.hint,
-                            hintStyle: AppTextStyles.body
-                                .copyWith(color: AppColors.textMuted),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
+                        child: SizedBox(
+                          height: 48,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0x26FFFFFF), // white@15%
+                              borderRadius:
+                                  BorderRadius.circular(AppDimens.radius16),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimens.space14,
+                            ),
+                            child: Row(
+                              children: <Widget>[
+                                const Icon(Icons.link_rounded,
+                                    size: 20, color: AppColors.textPrimary),
+                                const SizedBox(width: AppDimens.space8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: widget.controller,
+                                    focusNode: _focusNode,
+                                    keyboardType: TextInputType.url,
+                                    textInputAction: TextInputAction.done,
+                                    // Done/Далее в клавиатуре НЕ отправляет
+                                    // запрос — только закрывает клавиатуру
+                                    // если URL невалидный.
+                                    onSubmitted: _handleSubmit,
+                                    style: AppTextStyles.body,
+                                    cursorColor: AppColors.textPrimary,
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      border: InputBorder.none,
+                                      hintText: widget.hint,
+                                      hintStyle: AppTextStyles.body
+                                          .copyWith(color: AppColors.textMuted),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (hasText)
+                                  _RoundIconButton(
+                                    icon: Icons.close_rounded,
+                                    iconAsset:
+                                        Assets.images.icons.icClose.path,
+                                    onTap: _clear,
+                                    background: Colors.transparent,
+                                  ),
+                                const SizedBox(width: AppDimens.space4),
+                                _RoundIconButton(
+                                  icon: Icons.content_paste_rounded,
+                                  iconAsset:
+                                      Assets.images.icons.icClipboard.path,
+                                  onTap: _paste,
+                                  background: Colors.transparent,
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-                      if (hasText)
-                        _RoundIconButton(
-                          icon: Icons.close_rounded,
-                          iconAsset: 'assets/images/icons/ic_close.png',
-                          onTap: _clear,
-                          background: const Color(0x33FFFFFF),
-                        )
-                      else
-                        _RoundIconButton(
-                          icon: Icons.content_paste_rounded,
-                          iconAsset: 'assets/images/icons/ic_clipboard.png',
-                          onTap: _paste,
-                          background: Colors.transparent,
-                        ),
+                      // Check-button СНАРУЖИ pill — отдельный круг справа.
+                      // Появляется только когда URL валиден.
                       if (_isValid) ...<Widget>[
                         const SizedBox(width: AppDimens.space8),
                         GestureDetector(
                           onTap: () => widget.onSubmit(widget.controller.text),
                           child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: AppColors.success,
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.85),
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0x33FFFFFF),
+                                width: 1,
+                              ),
                             ),
-                            child: const Icon(Icons.check_rounded,
-                                color: Colors.white, size: 18),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ],
                     ],
                   ),
-                ),
-              ),
                 ],
               ),
             ),
@@ -310,7 +403,7 @@ class _RoundIconButton extends StatelessWidget {
             child: AppIcon(
               assetPath: iconAsset,
               fallback: icon,
-              size: 24, // Figma 3:176 lucide:clipboard — 24×24 без circle bg
+              size: 24,
               color: AppColors.textPrimary,
             ),
           ),

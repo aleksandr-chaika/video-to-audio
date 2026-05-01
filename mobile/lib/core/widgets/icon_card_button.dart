@@ -45,6 +45,13 @@ class IconCardButton extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: AppColors.accentGradient,
               borderRadius: BorderRadius.circular(AppDimens.radius24),
+              // Stroke по Figma 3:138 / 3:149: linear white→transparent
+              // 15% opacity, inside, 3px. В Flutter — solid white@15%
+              // border 1.5 (визуально достаточно близко к gradient stroke).
+              border: Border.all(
+                color: const Color(0x26FFFFFF),
+                width: 1.5,
+              ),
             ),
             child: Stack(
               clipBehavior: Clip.hardEdge,
