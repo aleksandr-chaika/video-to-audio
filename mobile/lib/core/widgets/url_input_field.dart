@@ -76,55 +76,65 @@ class _UrlInputFieldState extends State<UrlInputField> {
   @override
   Widget build(BuildContext context) {
     final bool hasText = widget.controller.text.isNotEmpty;
-    return Container(
-      height: 121,
-      padding: const EdgeInsets.fromLTRB(
-        AppDimens.space16,
-        AppDimens.space14,
-        AppDimens.space16,
-        AppDimens.space16,
-      ),
-      decoration: BoxDecoration(
-        gradient: AppColors.accentGradient,
-        borderRadius: BorderRadius.circular(AppDimens.radius24),
-      ),
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: <Widget>[
-          // YouTube play-decoration: 120×120 повёрнут на -14° (Figma 3:161).
-          // Старый blur-circle 240×240 удалён — он был лишней декорацией.
-          // YouTube play-decoration — pixel-perfect по Figma 3:161:
-          // X:226 Y:-42 W:120.97 H:120.97 ∠-14.01° opacity 7%.
-          // Card width 343 → right = 343-226-120.97 ≈ -4.
-          Positioned(
-            right: -4,
-            top: -42,
-            width: 120,
-            height: 120,
-            child: IgnorePointer(
-              child: Transform.rotate(
-                angle: -14.01 * 3.1415926535 / 180, // -14.01° по Figma props
-                child: Opacity(
-                  opacity: 0.07, // Figma: 7% (Image #36)
-                  child: Assets.images.ytPlayDecoration.image(
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
-                    errorBuilder:
-                        (BuildContext c, Object err, StackTrace? st) =>
-                            const SizedBox.shrink(),
+    // Структура: ClipRRect → Stack(gradient bg → decoration → padded content).
+    // Stack сам управляет clip и расположением, декорация позиционируется
+    // относительно ВНЕШНИХ границ card (а не padded child-зоны), и поэтому
+    // top:-42 действительно прижимает её к верху card по Figma.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppDimens.radius24),
+      child: SizedBox(
+        height: 121,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: <Widget>[
+            // Gradient-фон card.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: AppColors.accentGradient,
+                ),
+              ),
+            ),
+            // YouTube play-decoration — pixel-perfect по Figma 3:161:
+            // X:226 Y:-42 W:120.97 H:120.97 ∠-14.01° opacity 7%.
+            // Координаты от внешней границы card (без padding).
+            Positioned(
+              right: -4,
+              top: -42,
+              width: 120,
+              height: 120,
+              child: IgnorePointer(
+                child: Transform.rotate(
+                  angle: -14.01 * 3.1415926535 / 180,
+                  child: Opacity(
+                    opacity: 0.07,
+                    child: Assets.images.ytPlayDecoration.image(
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                      errorBuilder:
+                          (BuildContext c, Object err, StackTrace? st) =>
+                              const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const _YouTubeHeader(),
-              const SizedBox(height: AppDimens.space12),
-              SizedBox(
-                height: 48,
+            // Основной padded-контент: header + input pill.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppDimens.space16,
+                AppDimens.space14,
+                AppDimens.space16,
+                AppDimens.space16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const _YouTubeHeader(),
+                  const SizedBox(height: AppDimens.space12),
+                  SizedBox(
+                    height: 48,
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0x26FFFFFF), // 15%
@@ -193,9 +203,11 @@ class _UrlInputFieldState extends State<UrlInputField> {
                   ),
                 ),
               ),
-            ],
-          ),
-        ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
