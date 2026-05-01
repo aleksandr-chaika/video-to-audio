@@ -93,8 +93,8 @@ class _UrlInputFieldState extends State<UrlInputField> {
           // YouTube play-decoration: 120×120 повёрнут на -14° (Figma 3:161).
           // Старый blur-circle 240×240 удалён — он был лишней декорацией.
           Positioned(
-            right: -13,
-            top: -35,
+            right: 0,
+            top: 0,
             width: 120,
             height: 120,
             child: IgnorePointer(
