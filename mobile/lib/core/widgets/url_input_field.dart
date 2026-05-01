@@ -31,7 +31,6 @@ class UrlInputField extends StatefulWidget {
 class _UrlInputFieldState extends State<UrlInputField> {
   bool _isValid = false;
   bool _focused = false;
-  String? _clipboardSuggestion; // URL из буфера, готовый к вставке
   late final FocusNode _focusNode = FocusNode()..addListener(_onFocus);
 
   @override
@@ -52,47 +51,44 @@ class _UrlInputFieldState extends State<UrlInputField> {
   void _onChange() {
     final bool nv = YouTubeUrlValidator.isValid(widget.controller.text);
     if (nv != _isValid) setState(() => _isValid = nv);
-    // Текст изменился — скрыть chip suggestion (пользователь уже что-то ввёл).
-    if (widget.controller.text.isNotEmpty && _clipboardSuggestion != null) {
-      setState(() => _clipboardSuggestion = null);
-    }
   }
 
   void _onFocus() {
     if (_focused != _focusNode.hasFocus) {
       setState(() => _focused = _focusNode.hasFocus);
-      if (_focusNode.hasFocus) {
-        _checkClipboardForSuggestion();
-      } else {
-        // При unfocus — скрыть chip
-        setState(() => _clipboardSuggestion = null);
-      }
     }
   }
 
-  /// Проверяем clipboard при focus → если там валидный YouTube URL и
-  /// поле пустое, показываем inline chip «Paste link» над input.
-  Future<void> _checkClipboardForSuggestion() async {
-    if (widget.controller.text.isNotEmpty) return;
-    final ClipboardData? d = await Clipboard.getData('text/plain');
+  /// Tap на chip → читаем clipboard, вставляем содержимое в поле.
+  ///
+  /// На iOS 16+ при первом вызове появится system prompt «Allow Paste».
+  /// На iOS Simulator clipboard синхронизируется с mac автоматически
+  /// (Simulator → Edit → Automatically Sync Pasteboards), но если
+  /// синхронизация выключена — нужно вручную (Edit → Send Pasteboard).
+  ///
+  /// В debug-режиме печатаем результат — чтобы видеть в консоли что
+  /// именно вернул Clipboard.getData.
+  Future<void> _acceptSuggestion() async {
+    final ClipboardData? d = await Clipboard.getData(Clipboard.kTextPlain);
     final String? text = d?.text?.trim();
+    if (kDebugMode) {
+      debugPrint(
+          'Clipboard.getData → ${text == null ? "null" : '"$text" (${text.length} chars)'}');
+    }
     if (!mounted) return;
-    if (text == null ||
-        text.isEmpty ||
-        !YouTubeUrlValidator.isValid(text)) {
+    if (text == null || text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Буфер обмена пуст'),
+          duration: Duration(seconds: 2),
+        ),
+      );
       return;
     }
-    setState(() => _clipboardSuggestion = text);
-  }
-
-  void _acceptSuggestion() {
-    final String? text = _clipboardSuggestion;
-    if (text == null) return;
     widget.controller.text = text;
     widget.controller.selection = TextSelection.fromPosition(
       TextPosition(offset: text.length),
     );
-    setState(() => _clipboardSuggestion = null);
   }
 
   Future<void> _paste() async {
@@ -208,7 +204,12 @@ class _UrlInputFieldState extends State<UrlInputField> {
                             ),
                           );
                         },
-                        child: _clipboardSuggestion != null
+                        // Chip всегда показывается при focus + пустом поле.
+                        // Tap → читаем clipboard. iOS покажет prompt при
+                        // первом доступе («Allow Paste»). Вставляется
+                        // любой текст из буфера, не только YouTube URL —
+                        // валидация уже после ввода.
+                        child: (_focused && !hasText)
                             ? _PasteSuggestionChip(
                                 key: const ValueKey<String>('paste-chip'),
                                 onTap: _acceptSuggestion,
