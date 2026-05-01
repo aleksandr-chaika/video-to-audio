@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_dimens.dart';
 import '../../app/theme/app_text_styles.dart';
+import '../../gen/assets.gen.dart';
 import '../utils/url_validator.dart';
 import 'app_icon.dart';
 
@@ -92,21 +93,26 @@ class _UrlInputFieldState extends State<UrlInputField> {
         children: <Widget>[
           // YouTube play-decoration: 120×120 повёрнут на -14° (Figma 3:161).
           // Старый blur-circle 240×240 удалён — он был лишней декорацией.
+          // YouTube play-decoration — pixel-perfect по Figma 3:161:
+          // X:226 Y:-42 W:120.97 H:120.97 ∠-14.01° opacity 7%.
+          // Card width 343 → right = 343-226-120.97 ≈ -4.
           Positioned(
-            right: 0,
-            top: 0,
+            right: -4,
+            top: -42,
             width: 120,
             height: 120,
             child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.32,
-                child: Image.asset(
-                  'assets/images/yt_play_decoration.png',
-                  fit: BoxFit.contain,
-                  alignment: Alignment.center,
-                  errorBuilder:
-                      (BuildContext c, Object err, StackTrace? st) =>
-                          const SizedBox.shrink(),
+              child: Transform.rotate(
+                angle: -14.01 * 3.1415926535 / 180, // -14.01° по Figma props
+                child: Opacity(
+                  opacity: 0.07, // Figma: 7% (Image #36)
+                  child: Assets.images.ytPlayDecoration.image(
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
+                    errorBuilder:
+                        (BuildContext c, Object err, StackTrace? st) =>
+                            const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ),
@@ -205,8 +211,7 @@ class _YouTubeHeader extends StatelessWidget {
         const Icon(Icons.link_rounded,
             size: 20, color: AppColors.textPrimary),
         const SizedBox(width: AppDimens.space8),
-        Image.asset(
-          'assets/images/youtube_logo.png',
+        Assets.images.youtubeLogo.image(
           height: 20,
           fit: BoxFit.contain,
           errorBuilder: (BuildContext c, Object err, StackTrace? st) {

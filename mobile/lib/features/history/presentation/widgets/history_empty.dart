@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimens.dart';
+import '../../../../gen/assets.gen.dart';
 
 /// Empty history state — Image#16 reference (Figma export).
 /// Готовая 110×110 card-иллюстрация: тёмный rounded square с
@@ -24,8 +25,7 @@ class HistoryEmptyView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-          Image.asset(
-            'assets/images/mic_3d.png',
+          Assets.images.mic3d.image(
             width: 110,
             height: 110,
             fit: BoxFit.contain,

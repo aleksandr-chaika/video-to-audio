@@ -14,6 +14,7 @@ import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/icon_button_circle.dart';
 import '../../../../core/widgets/icon_card_button.dart';
 import '../../../../core/widgets/url_input_field.dart';
+import '../../../../gen/assets.gen.dart';
 import '../../../history/domain/entities/history_item.dart';
 import '../../../history/presentation/bloc/history_bloc.dart';
 import '../../../history/presentation/widgets/history_empty.dart';
@@ -207,7 +208,7 @@ class _Header extends StatelessWidget {
       children: <Widget>[
         IconButtonCircle(
           icon: Icons.settings_rounded,
-          iconAsset: 'assets/images/icons/ic_settings.png',
+          iconAsset: Assets.images.icons.icSettings.path,
           onPressed: onSettings,
         ),
       ],
@@ -229,9 +230,9 @@ class _SourceCardsRow extends StatelessWidget {
           child: IconCardButton(
             label: 'Gallery',
             icon: Icons.image_outlined,
-            iconAsset: 'assets/images/icons/ic_gallery.png',
+            iconAsset: Assets.images.icons.icGallery.path,
             backgroundDecorationAsset:
-                'assets/images/icons/ic_gallery_decoration.png',
+                Assets.images.icons.icGalleryDecoration.path,
             onTap: onGallery,
           ),
         ),
@@ -240,9 +241,9 @@ class _SourceCardsRow extends StatelessWidget {
           child: IconCardButton(
             label: 'Files',
             icon: Icons.folder_outlined,
-            iconAsset: 'assets/images/icons/ic_files.png',
+            iconAsset: Assets.images.icons.icFiles.path,
             backgroundDecorationAsset:
-                'assets/images/icons/ic_files_decoration.png',
+                Assets.images.icons.icFilesDecoration.path,
             onTap: onFiles,
           ),
         ),

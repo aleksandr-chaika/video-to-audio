@@ -50,6 +50,12 @@ dev_dependencies:
   json_serializable: ^6.9.0
   mocktail: ^1.0.5
 
+# Type-safe assets через lib/gen/assets.gen.dart (совместим по API
+# с flutter_gen). Использование: Assets.images.icons.icGallery.path
+# или Assets.images.youtubeLogo.image(width: 20).
+# При добавлении новых файлов в assets/images/** — добавить вручную
+# в lib/gen/assets.gen.dart (структура зеркалит файловую систему).
+
 flutter:
   uses-material-design: true
   assets:
