@@ -59,16 +59,11 @@ class _UrlInputFieldState extends State<UrlInputField> {
     }
   }
 
-  /// Tap на chip → читаем clipboard, вставляем содержимое в поле.
-  ///
-  /// На iOS 16+ при первом вызове появится system prompt «Allow Paste».
-  /// На iOS Simulator clipboard синхронизируется с mac автоматически
-  /// (Simulator → Edit → Automatically Sync Pasteboards), но если
-  /// синхронизация выключена — нужно вручную (Edit → Send Pasteboard).
-  ///
-  /// В debug-режиме печатаем результат — чтобы видеть в консоли что
-  /// именно вернул Clipboard.getData.
-  Future<void> _acceptSuggestion() async {
+
+  /// Чтение clipboard и вставка в поле. iOS 16+ при первом вызове
+  /// показывает system prompt «Allow Paste» — после approve работает.
+  /// Если буфер пуст → SnackBar.
+  Future<void> _paste() async {
     final ClipboardData? d = await Clipboard.getData(Clipboard.kTextPlain);
     final String? text = d?.text?.trim();
     if (kDebugMode) {
@@ -86,17 +81,8 @@ class _UrlInputFieldState extends State<UrlInputField> {
       return;
     }
     widget.controller.text = text;
-    widget.controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: text.length),
-    );
-  }
-
-  Future<void> _paste() async {
-    final ClipboardData? d = await Clipboard.getData('text/plain');
-    if (d?.text == null) return;
-    widget.controller.text = d!.text!;
     widget.controller.selection =
-        TextSelection.fromPosition(TextPosition(offset: d.text!.length));
+        TextSelection.fromPosition(TextPosition(offset: text.length));
   }
 
   void _clear() {
@@ -182,44 +168,7 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  // Header сжимается до Row(link + YouTube logo + Spacer + chip)
-                  // — chip с предложением вставки появляется справа в шапке
-                  // когда есть фокус и в буфере YouTube URL.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      const _YouTubeHeader(),
-                      const Spacer(),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        transitionBuilder:
-                            (Widget child, Animation<double> a) {
-                          return FadeTransition(
-                            opacity: a,
-                            child: SizeTransition(
-                              sizeFactor: a,
-                              axis: Axis.horizontal,
-                              axisAlignment: 1.0,
-                              child: child,
-                            ),
-                          );
-                        },
-                        // Chip всегда показывается при focus + пустом поле.
-                        // Tap → читаем clipboard. iOS покажет prompt при
-                        // первом доступе («Allow Paste»). Вставляется
-                        // любой текст из буфера, не только YouTube URL —
-                        // валидация уже после ввода.
-                        child: (_focused && !hasText)
-                            ? _PasteSuggestionChip(
-                                key: const ValueKey<String>('paste-chip'),
-                                onTap: _acceptSuggestion,
-                              )
-                            : const SizedBox.shrink(
-                                key: ValueKey<String>('no-chip'),
-                              ),
-                      ),
-                    ],
-                  ),
+                  const _YouTubeHeader(),
                   const SizedBox(height: AppDimens.space12),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -392,56 +341,6 @@ class _YouTubeWordmarkFallback extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Inline-предложение вставки из буфера обмена. Появляется справа в
-/// шапке YouTube-card, когда поле ввода в фокусе и в clipboard
-/// валидный YouTube URL. Tap → вставка в input.
-class _PasteSuggestionChip extends StatelessWidget {
-  const _PasteSuggestionChip({required this.onTap, super.key});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimens.space12,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0x33FFFFFF), // white@20%
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: const Color(0x4DFFFFFF),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const <Widget>[
-              Icon(Icons.content_paste_rounded,
-                  size: 14, color: AppColors.textPrimary),
-              SizedBox(width: 6),
-              Text(
-                'Вставить',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
