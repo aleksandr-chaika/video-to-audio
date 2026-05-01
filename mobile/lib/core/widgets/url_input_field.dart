@@ -60,26 +60,45 @@ class _UrlInputFieldState extends State<UrlInputField> {
   }
 
 
-  /// Чтение clipboard и вставка в поле. iOS 16+ при первом вызове
-  /// показывает system prompt «Allow Paste» — после approve работает.
-  /// Если буфер пуст → SnackBar.
+  /// Чтение clipboard и вставка в поле. На iOS 16+ при первом вызове
+  /// появляется system prompt «Allow Paste». Если приложение не получило
+  /// permission — Clipboard.getData вернёт null. Также пробуем
+  /// hasStrings() как alternative path.
   Future<void> _paste() async {
-    final ClipboardData? d = await Clipboard.getData(Clipboard.kTextPlain);
-    final String? text = d?.text?.trim();
+    String? text;
+    String? diag;
+
+    try {
+      // Сначала проверяем что в clipboard есть text без чтения содержимого
+      // (не триггерит iOS Allow Paste prompt).
+      final bool has = await Clipboard.hasStrings();
+      diag = 'hasStrings=$has';
+
+      final ClipboardData? d = await Clipboard.getData(Clipboard.kTextPlain);
+      diag = '$diag, data=${d == null ? "null" : "ClipboardData"}, text='
+          '${d?.text == null ? "null" : '"${d!.text}" (${d.text!.length})'}';
+      text = d?.text?.trim();
+    } catch (e) {
+      diag = 'EXCEPTION: $e';
+    }
+
     if (kDebugMode) {
-      debugPrint(
-          'Clipboard.getData → ${text == null ? "null" : '"$text" (${text.length} chars)'}');
+      debugPrint('[paste] $diag');
     }
     if (!mounted) return;
+
     if (text == null || text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Буфер обмена пуст'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(
+              kDebugMode ? 'Буфер пуст. $diag' : 'Буфер обмена пуст'),
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
+
     widget.controller.text = text;
     widget.controller.selection =
         TextSelection.fromPosition(TextPosition(offset: text.length));
