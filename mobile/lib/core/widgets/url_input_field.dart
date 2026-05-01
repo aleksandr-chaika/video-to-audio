@@ -98,18 +98,15 @@ class _UrlInputFieldState extends State<UrlInputField> {
             width: 120,
             height: 120,
             child: IgnorePointer(
-              child: Transform.rotate(
-                angle: -14.01 * 3.1415926535 / 180, // -14.01° в радианах
-                child: Opacity(
-                  opacity: 0.32,
-                  child: Image.asset(
-                    'assets/images/yt_play_decoration.png',
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
-                    errorBuilder:
-                        (BuildContext c, Object err, StackTrace? st) =>
-                            const SizedBox.shrink(),
-                  ),
+              child: Opacity(
+                opacity: 0.32,
+                child: Image.asset(
+                  'assets/images/yt_play_decoration.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  errorBuilder:
+                      (BuildContext c, Object err, StackTrace? st) =>
+                          const SizedBox.shrink(),
                 ),
               ),
             ),
