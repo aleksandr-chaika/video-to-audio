@@ -14,6 +14,8 @@ from httpx import ASGITransport, AsyncClient
 
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
 os.environ.setdefault("APP_ENV", "test")
+# Force YT_DEMO_MODE off for unit tests (regardless of .env)
+os.environ["YT_DEMO_MODE"] = "false"
 
 
 @pytest.fixture

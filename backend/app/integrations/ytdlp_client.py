@@ -41,14 +41,24 @@ class YtDlpClient:
     """Async wrapper around yt-dlp executed in a thread."""
 
     def __init__(self, output_dir: Path | None = None) -> None:
-        self._output_dir = output_dir or get_settings().tmp_dir
-        self._cookies = get_settings().yt_cookies_path or None
-        self._proxy = get_settings().yt_proxy or None
+        settings = get_settings()
+        self._output_dir = output_dir or settings.tmp_dir
+        self._cookies = settings.yt_cookies_path or None
+        self._proxy = settings.yt_proxy or None
+        self._demo_mode = settings.yt_demo_mode
 
     async def download_audio(self, url: str, job_id: str) -> YouTubeMetadata:
         """Download best audio stream + return metadata. Conversion is done elsewhere."""
         target_dir = self._output_dir / job_id
         target_dir.mkdir(parents=True, exist_ok=True)
+
+        # DEMO mode: пропускаем yt-dlp, генерируем тестовый sine wave
+        # через ffmpeg. Используется когда YouTube блокирует cloud-IP.
+        if self._demo_mode:
+            logger.info("yt_demo_mode_active", url=url, job_id=job_id)
+            return await asyncio.to_thread(
+                self._generate_demo_source, target_dir
+            )
 
         opts: dict[str, Any] = {
             "format": "bestaudio/best",
@@ -119,5 +129,37 @@ class YtDlpClient:
             title=str(info.get("title")) if info.get("title") else None,
             thumbnail_url=(str(info.get("thumbnail")) if info.get("thumbnail") else None),
             duration_sec=(int(info.get("duration")) if info.get("duration") is not None else None),
+            source_path=source_path,
+        )
+
+    def _generate_demo_source(self, target_dir: Path) -> YouTubeMetadata:
+        """DEMO: создаём 5-секундный sine wave через ffmpeg.
+        Возвращаем как фейковый source — дальше идёт обычная конверсия в WAV."""
+        import subprocess
+
+        source_path = target_dir / "source.mp3"
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=5",
+            "-c:a",
+            "libmp3lame",
+            "-b:a",
+            "128k",
+            str(source_path),
+        ]
+        result = subprocess.run(cmd, capture_output=True, timeout=30)
+        if result.returncode != 0:
+            raise YouTubeUnavailableError(
+                message="ffmpeg sine-wave generation failed",
+                code=ErrorCode.EXTRACTION_FAILED.value,
+            )
+        return YouTubeMetadata(
+            title="Demo Audio (5 sec sine 440 Hz)",
+            thumbnail_url="https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+            duration_sec=5,
             source_path=source_path,
         )

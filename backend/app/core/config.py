@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     yt_cookies_path: str | None = None
     yt_proxy: str | None = None
 
+    # DEMO режим: yt-dlp не вызывается — worker вместо реальной загрузки
+    # генерирует короткое тестовое аудио (5 сек, 440 Hz sine wave) через
+    # ffmpeg. Используется для тестирования UI flow когда YouTube
+    # блокирует cloud-IP с BOT_DETECTED.
+    yt_demo_mode: bool = False
+
     @property
     def allowed_hosts(self) -> list[str]:
         return [h.strip().lower() for h in self.allowed_hosts_raw.split(",") if h.strip()]
